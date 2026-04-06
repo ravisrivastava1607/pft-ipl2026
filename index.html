@@ -410,19 +410,11 @@ tbody td.td-m{text-align:left;padding-left:14px;}
     <div class="tab-content" id="tab-db">
       <div class="setup-box">
         <h3>📡 HOW TO SET UP LIVE DATABASE</h3>
-        <p style="margin-bottom:16px;color:var(--t3);">Do this <strong style="color:var(--gold)">once</strong> — then everyone sees live scores automatically. Free forever.</p>
+        <p style="margin-bottom:16px;color:var(--t3);">Database is configured and credentials are baked into this file. Works for all visitors.</p>
         <ol>
-          <li>Go to <a href="https://jsonbin.io" target="_blank" style="color:var(--blue);">jsonbin.io</a> → Sign up free (use Google login)</li>
-          <li>Click <strong style="color:var(--t1);">+ New Bin</strong> → paste exactly this as content:<br>
-            <code style="display:block;margin-top:6px;padding:8px;font-size:12px;">{"matches":[]}</code>
-          </li>
-          <li>Click <strong style="color:var(--t1);">Save</strong> → then click the <strong style="color:var(--gold);">⚙ Settings</strong> icon on your bin → toggle <strong style="color:var(--gold);">Make Public ✅</strong> — this is essential!</li>
-          <li>Copy the <strong style="color:var(--t1);">BIN ID</strong> from the URL bar — it looks like <code>6619abc123def456</code></li>
-          <li>Go to <strong style="color:var(--t1);">API Keys</strong> tab on JSONbin → copy your <strong style="color:var(--t1);">X-Master-Key</strong></li>
-          <li>Open the downloaded <code>predict-for-today.html</code> in Notepad → find these two lines at the top of the script section and replace the placeholder values:<br>
-            <code style="display:block;margin-top:6px;padding:8px;font-size:11px;line-height:1.8;">const BIN_ID  = "your-bin-id-here";<br>const API_KEY = "$2a$10$your-key-here";</code>
-          </li>
-          <li>Save the file → drag & drop it again to <a href="https://app.netlify.com/drop" target="_blank" style="color:var(--blue);">app.netlify.com/drop</a></li>
+          <li>JSONbin.io is used as the live database</li>
+          <li>BIN ID in this file: <code id="currentBinId">checking...</code></li>
+          <li>Click <strong style="color:var(--t1);">"Test Current Connection"</strong> below to verify</li>
         </ol>
         <div style="margin-top:20px;padding:14px;background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.15);border-radius:10px;">
           <p style="font-family:var(--fm);font-size:11px;color:var(--green);line-height:1.7;">
@@ -495,20 +487,13 @@ const FALLBACK_SCHEDULE = [
 ];
 
 /* ════════════════════════════════════
-   🔧 DATABASE CONFIG
-   These are baked into the file so
-   ALL visitors connect to same DB.
-   Edit BIN_ID and API_KEY, then
-   re-upload to Netlify.
+   🔧 DATABASE — JSONbin.io
+   BIN_ID and API_KEY are hardcoded so
+   every visitor connects to the same DB.
 ════════════════════════════════════ */
-// ─────────────────────────────────────────────
-// STEP 1: Paste your JSONbin BIN ID below
-//         Make sure the bin is set to PUBLIC
-//         on jsonbin.io (toggle in bin settings)
-// STEP 2: Paste your X-Master-Key for writes
-// ─────────────────────────────────────────────
 const BIN_ID  = "69d208ccaaba882197c71c89";
 const API_KEY = "$2a$10$AMXpaB/HHnv0YzlHWGD3K.HLQBJ8olsDgqjM7pEZU0zetkuMNz4ha";
+const DB_URL  = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 /* ════════════════════════════════════
    STATE
@@ -522,113 +507,90 @@ let autoRefreshTimer = null;
    DB CONFIG HELPERS (admin UI)
 ════════════════════════════════════ */
 function saveDbConfig(){
-  showConnStatus('To update credentials: edit BIN_ID & API_KEY in the HTML and re-upload to Netlify.','fail');
+  showConnStatus('Credentials are hardcoded in the HTML file.','fail');
 }
 function updateBinDisplay(){
-  const el=document.getElementById('currentBinId');
-  const isSet = BIN_ID && BIN_ID !== 'PASTE_YOUR_BIN_ID_HERE';
-  if(el) el.textContent = isSet ? BIN_ID : 'NOT SET — edit HTML file';
-  const dot=document.getElementById('dbSetupDot');
-  if(dot){ dot.className='sync-dot'; dot.classList.add(isSet?'live':'error'); }
+  const el = document.getElementById('currentBinId');
+  if(el) el.textContent = BIN_ID;
+  const dot = document.getElementById('dbSetupDot');
+  if(dot){ dot.className='sync-dot live'; }
 }
 function showConnStatus(msg, type){
-  const el=document.getElementById('connStatus');
+  const el = document.getElementById('connStatus');
   if(!el) return;
-  el.innerHTML=`<div class="conn-status ${type==='ok'?'conn-ok':'conn-fail'}">${msg}</div>`;
+  el.innerHTML = `<div class="conn-status ${type==='ok'?'conn-ok':'conn-fail'}">${msg}</div>`;
 }
 
 /* ════════════════════════════════════
-   JSONBIN API
+   DATABASE API — JSONbin
+   API key sent on ALL requests so it
+   works whether bin is public or private
 ════════════════════════════════════ */
-function jsonbinUrl(){ return `https://api.jsonbin.io/v3/b/${BIN_ID}`; }
-// Both read and write use the master key
-// This works for both public AND private bins
-function jsonbinReadHeaders(){
-  return {
-    'X-Master-Key': API_KEY,
-    'X-Bin-Meta': 'false'
-  };
-}
-function jsonbinWriteHeaders(){
-  return {
-    'Content-Type': 'application/json',
-    'X-Master-Key': API_KEY,
-    'X-Bin-Meta': 'false'
-  };
+function dbHeaders(write=false){
+  const h = { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' };
+  if(write) h['Content-Type'] = 'application/json';
+  return h;
 }
 
 async function pullData(){
   setSyncState('saving');
-  if(!BIN_ID || BIN_ID === 'PASTE_YOUR_BIN_ID_HERE'){
-    matches = getCachedMatches();
-    renderAll();
-    setSyncState('error');
-    setSyncMsg('⚠ Database not configured yet. Admin: edit BIN_ID and API_KEY in the HTML file.');
-    return;
-  }
   try{
-    const res = await fetch(jsonbinUrl(), { headers: jsonbinReadHeaders() });
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const res = await fetch(DB_URL, { headers: dbHeaders() });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    matches = (data.record && data.record.matches) ? data.record.matches : SEED_MATCHES;
+    matches = (data.record && Array.isArray(data.record.matches))
+              ? data.record.matches : SEED_MATCHES;
     cacheMatches(matches);
     renderAll();
     setSyncState('live');
-    setSyncMsg('Live · Last synced ' + new Date().toLocaleTimeString());
+    setSyncMsg('Live · synced ' + new Date().toLocaleTimeString());
   } catch(e){
+    console.warn('pullData failed:', e.message);
     matches = getCachedMatches();
     renderAll();
     setSyncState('error');
-    setSyncMsg('⚠ Sync error — showing cached data.');
+    setSyncMsg('⚠ Using cached data — ' + e.message);
   }
 }
 
 async function pushData(){
-  if(!BIN_ID || BIN_ID === 'PASTE_YOUR_BIN_ID_HERE'){
-    toast('Database not configured! Edit BIN_ID and API_KEY in the HTML file.', true);
-    return false;
-  }
   setSyncState('saving');
-  setSyncMsg('Saving...');
+  setSyncMsg('Saving to cloud...');
   try{
-    const res = await fetch(jsonbinUrl(), {
-      method:'PUT',
-      headers: jsonbinWriteHeaders(),
+    const res = await fetch(DB_URL, {
+      method: 'PUT',
+      headers: dbHeaders(true),
       body: JSON.stringify({ matches })
     });
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
     cacheMatches(matches);
     setSyncState('live');
     setSyncMsg('Saved & synced · ' + new Date().toLocaleTimeString());
     return true;
   } catch(e){
+    console.error('pushData failed:', e.message);
     setSyncState('error');
     setSyncMsg('⚠ Save failed: ' + e.message);
-    toast('Failed to save! Check BIN_ID and API_KEY.', true);
+    toast('Save failed! ' + e.message, true);
     return false;
   }
 }
 
 async function testConnection(){
-  if(!BIN_ID || BIN_ID === 'PASTE_YOUR_BIN_ID_HERE'){
-    showConnStatus('Please set BIN_ID in the HTML file first.','fail');
-    return;
-  }
   try{
-    const res = await fetch(jsonbinUrl(), { headers: jsonbinReadHeaders() });
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const res = await fetch(DB_URL, { headers: dbHeaders() });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    showConnStatus('✅ Connected! Bin has ' + ((data.record&&data.record.matches)?data.record.matches.length:0) + ' matches.','ok');
-    toast('Database connected! ✅');
+    const count = (data.record && data.record.matches) ? data.record.matches.length : 0;
+    showConnStatus(`✅ Connected! ${count} matches in database.`, 'ok');
+    toast('Connected! ✅');
     await pullData();
   } catch(e){
-    showConnStatus('❌ Connection failed: ' + e.message,'fail');
-    toast('Connection failed. Check BIN_ID and API_KEY.', true);
+    showConnStatus('❌ Failed: ' + e.message, 'fail');
+    toast('Connection failed: ' + e.message, true);
   }
 }
 
-
-/* ════════════════════════════════════
    LOCAL CACHE (fallback for viewers)
 ════════════════════════════════════ */
 function cacheMatches(m){ try{ localStorage.setItem(LS_CACHE, JSON.stringify(m)); }catch(e){} }
