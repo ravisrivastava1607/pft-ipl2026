@@ -198,9 +198,10 @@ tbody td.td-m{text-align:left;padding-left:14px;}
 @media(max-width:520px){.form-row{grid-template-columns:1fr;}}
 .fg{display:flex;flex-direction:column;gap:6px;}
 .fg label{font-size:11px;color:var(--t3);letter-spacing:1.5px;font-family:var(--fm);}
-.fg input,.fg select{background:var(--bg0);border:1px solid var(--bdr);border-radius:10px;color:var(--t1);font-family:var(--fm);font-size:13px;padding:11px 14px;outline:none;width:100%;}
+.fg input,.fg select{background:var(--bg0);border:1px solid var(--bdr);border-radius:10px;color:var(--t1);font-family:var(--fm);font-size:13px;padding:11px 14px;outline:none;width:100%;-webkit-appearance:none;appearance:none;}
 .fg input:focus,.fg select:focus{border-color:var(--blue);}
-.fg select option{background:var(--bg2);}
+.fg select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a9abc' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer;}
+.fg select option{background:var(--bg2);color:var(--t1);padding:8px;}
 .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;}
 .btn-save{background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,100,200,0.1));border:1px solid var(--blue);color:var(--blue);border-radius:10px;padding:12px 28px;font-family:var(--fm);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
 .btn-save:hover{background:rgba(0,212,255,0.25);}
@@ -363,7 +364,7 @@ tbody td.td-m{text-align:left;padding-left:14px;}
   </div>
 </div>
 
-<div class="footer"><strong>PREDICT FOR TODAY</strong> · IPL 2026 · Built with ❤️ for B-313 fans</div>
+<div class="footer"><strong>PREDICT FOR TODAY</strong> · IPL 2026 · Built with ❤️ for cricket fans</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -571,33 +572,51 @@ function renderToday(){
 /* ══════════════════════════════════════════
    TODAY'S MATCH — ADMIN CONTROLS
    ══════════════════════════════════════════ */
+function showNewMatchForm(el, heading){
+  const opts=SCHEDULE.map((s,i)=>`<option value="${i}">${s.date} — ${s.teams} (${s.venue})</option>`).join('');
+  el.innerHTML=`
+    ${heading||''}
+    <p style="font-family:var(--fm);font-size:12px;color:var(--t3);margin-bottom:16px;">Pick today's match to open voting for all participants.</p>
+    <div class="fg" style="margin-bottom:14px;">
+      <label>SELECT MATCH</label>
+      <select id="pickMatch"><option value="">— Choose a match —</option>${opts}<option value="custom">✏️ Custom match</option></select>
+    </div>
+    <div id="customMatchFields" style="display:none;">
+      <div class="form-row">
+        <div class="fg"><label>TEAM A</label><input type="text" id="cmTeamA" placeholder="e.g. KKR"></div>
+        <div class="fg"><label>TEAM B</label><input type="text" id="cmTeamB" placeholder="e.g. PBKS"></div>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn-green" onclick="createTodayMatch()">🎯 OPEN VOTING</button>
+    </div>`;
+  setTimeout(()=>{
+    const sel=document.getElementById('pickMatch');
+    if(sel)sel.onchange=()=>{document.getElementById('customMatchFields').style.display=sel.value==='custom'?'block':'none';};
+  },0);
+}
+
 function renderAdminToday(){
   const el=document.getElementById('adminTodayControls');
   if(!el) return;
 
+  // No match set — show fresh dropdown
   if(!todayMatch){
-    // No match set — show creation form
-    const opts=SCHEDULE.map((s,i)=>`<option value="${i}">${s.date} — ${s.teams} (${s.venue})</option>`).join('');
-    el.innerHTML=`
-      <p style="font-family:var(--fm);font-size:12px;color:var(--t3);margin-bottom:16px;">Set today's match so participants can vote on the winner.</p>
-      <div class="fg" style="margin-bottom:14px;">
-        <label>SELECT MATCH</label>
-        <select id="pickMatch"><option value="">— Choose a match —</option>${opts}<option value="custom">✏️ Custom match</option></select>
-      </div>
-      <div id="customMatchFields" style="display:none;">
-        <div class="form-row">
-          <div class="fg"><label>TEAM A</label><input type="text" id="cmTeamA" placeholder="e.g. KKR"></div>
-          <div class="fg"><label>TEAM B</label><input type="text" id="cmTeamB" placeholder="e.g. PBKS"></div>
-        </div>
-      </div>
-      <div class="btn-row" style="margin-top:12px;">
-        <button class="btn-green" onclick="createTodayMatch()">🎯 OPEN VOTING</button>
-      </div>`;
-    // Show/hide custom fields
-    setTimeout(()=>{
-      const sel=document.getElementById('pickMatch');
-      if(sel)sel.onchange=()=>{document.getElementById('customMatchFields').style.display=sel.value==='custom'?'block':'none';};
-    },0);
+    showNewMatchForm(el);
+    return;
+  }
+
+  // Match is settled — show summary + new match form below
+  if(todayMatch.status==='settled'){
+    const tm=todayMatch;
+    const votes=tm.votes||{};
+    const correctNames=PLAYERS.filter(p=>votes[p.name]===tm.winner).map(p=>p.name);
+    const heading=`<div style="background:rgba(57,255,20,0.06);border:1px solid rgba(57,255,20,0.2);border-radius:12px;padding:16px;margin-bottom:20px;">
+      <div style="font-family:var(--fd);font-size:20px;color:var(--gold);margin-bottom:4px;">✅ ${tm.teamA} vs ${tm.teamB} — SETTLED</div>
+      <div style="font-family:var(--fm);font-size:12px;color:var(--green);">🏆 ${tm.winner} won · ${correctNames.length} correct predictor${correctNames.length!==1?'s':''} · Scores updated</div>
+      <button class="btn-danger" style="margin-top:10px;font-size:11px;padding:8px 16px;" onclick="clearTodayMatch()">✕ Dismiss</button>
+    </div>`;
+    showNewMatchForm(el, heading);
     return;
   }
 
@@ -635,10 +654,6 @@ function renderAdminToday(){
       </div>
       <button class="btn-green" onclick="declareWinner()">🏆 DECLARE WINNER & UPDATE SCORES</button>
       <button class="btn-save" style="font-size:11px;padding:8px 16px;" onclick="hideVotes()">🔒 Hide Votes Again</button>`;
-  } else if(tm.status==='settled'){
-    actionBtns=`
-      <p style="font-family:var(--fm);font-size:12px;color:var(--green);">✅ Match settled! Scores updated. ${tm.winner} won.</p>
-      <button class="btn-gold" onclick="clearTodayMatch()">🎯 Set Up Next Match</button>`;
   }
 
   el.innerHTML=`
