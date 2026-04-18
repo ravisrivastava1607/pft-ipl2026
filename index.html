@@ -505,25 +505,65 @@ function renderUpcoming(){
 }
 
 async function fetchSchedule(){
+  const el=document.getElementById('upcomingMatches');
+  
+  // Try cricScore endpoint first (recent + upcoming ±7 days)
   try{
+    dlog('Fetching IPL schedule from CricAPI...','info');
     const res=await fetch(`https://api.cricapi.com/v1/cricScore?apikey=${CRIC_API_KEY}`);
     const data=await res.json();
-    if(data.status!=='success'||!data.data){dlog('CricAPI schedule: no data','warn');return;}
-    const ipl=data.data.filter(m=>m.name&&(m.name.includes('Indian Premier League')||m.name.includes('IPL')));
-    if(!ipl.length){dlog('CricAPI: no IPL matches found','warn');return;}
-    liveSchedule=ipl.map(m=>({
-      date:m.dateTimeGMT?new Date(m.dateTimeGMT).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—',
-      teams:m.t1&&m.t2?`${m.t1} vs ${m.t2}`:m.name,
-      venue:m.venue||'',
-      status:m.matchStarted?(m.matchEnded?'completed':'live'):'upcoming',
-      winner:m.matchEnded?m.status||'':'',
-      t1:m.t1||'',t2:m.t2||'',apiName:m.name||''
-    }));
-    dlog('CricAPI: loaded '+liveSchedule.length+' IPL matches','ok');
-    renderUpcoming();
-    // Also refresh admin dropdown if open
-    if(adminUnlocked)renderAdminToday();
-  }catch(e){dlog('CricAPI schedule fetch failed: '+e.message,'err');}
+    dlog('CricAPI cricScore response: status='+data.status+', items='+(data.data?data.data.length:0),'info');
+    
+    if(data.status==='success'&&data.data){
+      const ipl=data.data.filter(m=>m.name&&(m.name.includes('Indian Premier League')||m.name.includes('IPL')));
+      if(ipl.length){
+        liveSchedule=ipl.map(m=>({
+          date:m.dateTimeGMT?new Date(m.dateTimeGMT).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—',
+          teams:m.t1&&m.t2?`${m.t1} vs ${m.t2}`:m.name,
+          venue:m.venue||'',
+          status:m.matchStarted?(m.matchEnded?'completed':'live'):'upcoming',
+          winner:m.matchEnded?(m.status||''):'',
+          t1:m.t1||'',t2:m.t2||'',apiName:m.name||''
+        }));
+        dlog('✅ Loaded '+liveSchedule.length+' IPL matches from cricScore','ok');
+        renderUpcoming();if(adminUnlocked)renderAdminToday();
+        return;
+      } else {
+        dlog('cricScore returned data but no IPL matches found','warn');
+      }
+    } else {
+      dlog('cricScore failed: '+(data.reason||data.status||'unknown'),'warn');
+    }
+  }catch(e){dlog('cricScore endpoint error: '+e.message,'err');}
+
+  // Try currentMatches endpoint as fallback
+  try{
+    dlog('Trying currentMatches endpoint...','info');
+    const res2=await fetch(`https://api.cricapi.com/v1/currentMatches?apikey=${CRIC_API_KEY}&offset=0`);
+    const data2=await res2.json();
+    dlog('currentMatches response: status='+data2.status+', items='+(data2.data?data2.data.length:0),'info');
+    
+    if(data2.status==='success'&&data2.data){
+      const ipl2=data2.data.filter(m=>m.name&&(m.name.includes('Indian Premier League')||m.name.includes('IPL')));
+      if(ipl2.length){
+        liveSchedule=ipl2.map(m=>({
+          date:m.dateTimeGMT?new Date(m.dateTimeGMT).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):(m.date||'—'),
+          teams:m.teams?m.teams.join(' vs '):(m.name||'—'),
+          venue:m.venue||'',
+          status:m.matchStarted?(m.matchEnded?'completed':'live'):'upcoming',
+          winner:m.matchEnded?(m.status||''):'',
+          t1:m.teams?m.teams[0]:'',t2:m.teams?m.teams[1]:'',apiName:m.name||''
+        }));
+        dlog('✅ Loaded '+liveSchedule.length+' IPL matches from currentMatches','ok');
+        renderUpcoming();if(adminUnlocked)renderAdminToday();
+        return;
+      }
+    }
+  }catch(e){dlog('currentMatches endpoint error: '+e.message,'err');}
+
+  // Both failed — show error instead of infinite spinner
+  dlog('All CricAPI attempts failed. Showing error message.','err');
+  if(el)el.innerHTML='<div style="text-align:center;padding:24px;font-family:var(--fm);font-size:12px;color:var(--t3);background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;"><div style="color:var(--gold);font-size:14px;margin-bottom:8px;">⚠ Could not load IPL schedule</div>CricAPI may be down or API key expired.<br>You can still use <strong style="color:var(--blue)">Custom match</strong> in the Admin panel to set up today\'s match manually.<br><br><button onclick="fetchSchedule()" style="background:rgba(0,212,255,0.08);border:1px solid var(--bdr2);color:var(--blue);border-radius:8px;padding:8px 18px;font-family:var(--fm);font-size:12px;cursor:pointer;">↻ Try Again</button></div>';
 }
 function renderAll(){renderTicker();renderStats();renderLB();renderLog();}
 
