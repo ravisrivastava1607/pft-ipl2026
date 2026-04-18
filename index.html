@@ -260,13 +260,7 @@ const SEED=[
   {date:"2 Apr",teams:"KKR vs SRH",winner:"SRH",correct:["Anurag Singh Siddhu"]},
   {date:"3 Apr",teams:"CSK vs PBKS",winner:"PBKS",correct:["Mohd. Jameel","Alok Dohare","Saurabh Singh","Naveen Srivastava","Ravi Srivastava"]}
 ];
-const SCHEDULE=[
-  {date:"19 Apr",teams:"MI vs RCB",venue:"Mumbai"},{date:"19 Apr",teams:"GT vs PBKS",venue:"Ahmedabad"},
-  {date:"20 Apr",teams:"DC vs KKR",venue:"Delhi"},{date:"20 Apr",teams:"LSG vs CSK",venue:"Lucknow"},
-  {date:"21 Apr",teams:"SRH vs RR",venue:"Hyderabad"},{date:"21 Apr",teams:"MI vs GT",venue:"Mumbai"},
-  {date:"22 Apr",teams:"RCB vs DC",venue:"Bengaluru"},{date:"22 Apr",teams:"PBKS vs KKR",venue:"Chandigarh"},
-  {date:"23 Apr",teams:"CSK vs SRH",venue:"Chennai"},{date:"23 Apr",teams:"LSG vs RR",venue:"Lucknow"},
-];
+let liveSchedule=[]; // populated from CricAPI
 
 let matches=[],todayMatch=null,predState={},adminUnlocked=false;
 
@@ -329,7 +323,7 @@ function renderAdminToday(){
 
   // ─── NO MATCH or SETTLED → show match picker ───
   if(!todayMatch||todayMatch.status==='settled'){
-    const opts=SCHEDULE.map((s,i)=>`<option value="${i}">${s.date} — ${s.teams} (${s.venue})</option>`).join('');
+    const opts=liveSchedule.length?liveSchedule.map((s,i)=>`<option value="${i}">${s.date} — ${s.teams} (${s.venue})</option>`).join(''):'<option value="" disabled>Loading schedule from CricAPI...</option>';
     let banner='';
     if(todayMatch?.status==='settled'){const tm=todayMatch,v=tm.votes||{},cn=PLAYERS.filter(p=>v[p.name]===tm.winner).length;
       banner=`<div style="background:rgba(57,255,20,0.06);border:1px solid rgba(57,255,20,0.2);border-radius:12px;padding:16px;margin-bottom:20px;"><div style="font-family:var(--fd);font-size:20px;color:var(--gold);">✅ ${tm.teamA} vs ${tm.teamB} — DONE</div><div style="font-family:var(--fm);font-size:12px;color:var(--green);margin-top:4px;">🏆 ${tm.winner} won · ${cn} correct · Scores updated</div></div>`;}
@@ -476,7 +470,14 @@ async function createTodayMatch(){
   const sel=document.getElementById('pickMatch');if(!sel||!sel.value){toast('Pick a match!',true);return;}
   let teamA,teamB,date,teams;
   if(sel.value==='custom'){teamA=(document.getElementById('cmTeamA').value||'').trim().toUpperCase();teamB=(document.getElementById('cmTeamB').value||'').trim().toUpperCase();if(!teamA||!teamB){toast('Enter both teams!',true);return;}date=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short'});teams=teamA+' vs '+teamB;}
-  else{const m=SCHEDULE[parseInt(sel.value)];const p=m.teams.split(' vs ');teamA=p[0].trim();teamB=p[1].trim();date=m.date;teams=m.teams;}
+  else{const m=liveSchedule[parseInt(sel.value)];
+    // Extract short team names (e.g. "Mumbai Indians" → take abbreviation from teams field if "vs" present, else use full)
+    const teamsStr=m.teams;const p=teamsStr.split(' vs ');
+    teamA=p[0].trim();teamB=p[1]?p[1].trim():teamsStr;
+    // Try to shorten to common IPL abbreviations
+    const abbr={'Mumbai Indians':'MI','Chennai Super Kings':'CSK','Royal Challengers Bengaluru':'RCB','Kolkata Knight Riders':'KKR','Delhi Capitals':'DC','Rajasthan Royals':'RR','Punjab Kings':'PBKS','Sunrisers Hyderabad':'SRH','Lucknow Super Giants':'LSG','Gujarat Titans':'GT'};
+    const shortA=abbr[teamA]||teamA;const shortB=abbr[teamB]||teamB;
+    date=m.date;teams=shortA+' vs '+shortB;teamA=shortA;teamB=shortB;}
   todayMatch={date,teams,teamA,teamB,votes:{},revealed:false,winner:null,status:'voting'};
   await pushData();renderAll();renderToday();toast('Voting OPEN! 🟢');
 }
@@ -492,7 +493,38 @@ function renderTicker(){const sc=calcScores();const sorted=PLAYERS.map(p=>({...p
 function renderStats(){const sc=calcScores(),vals=Object.values(sc),total=vals.reduce((a,b)=>a+b,0),ls=Math.max(...vals);const leader=PLAYERS.find(p=>sc[p.name]===ls);const avgC=matches.length?(matches.reduce((a,m)=>a+(m.correct||[]).length,0)/matches.length).toFixed(1):'—';document.getElementById('statsBar').innerHTML=`<div class="stat-card"><div class="stat-icon">🏏</div><div class="stat-val">${matches.length}</div><div class="stat-lbl">MATCHES</div></div><div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-val">${total}</div><div class="stat-lbl">TOTAL PTS</div></div><div class="stat-card"><div class="stat-icon">👑</div><div class="stat-val" style="font-size:22px;color:var(--gold)">${leader?leader.ini:'—'}</div><div class="stat-lbl">LEADER</div></div><div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-val">${avgC}</div><div class="stat-lbl">AVG CORRECT</div></div>`;document.getElementById('matchCountBadge').textContent=matches.length;}
 function renderLB(){const sc=calcScores(),st=calcStreaks(),cc=calcCorrects();const sorted=PLAYERS.map(p=>({...p,s:sc[p.name],streak:st[p.name],correct:cc[p.name]})).sort((a,b)=>b.s-a.s);const lb=document.getElementById('leaderboard');lb.innerHTML='';const rk=[];let tr=1;sorted.forEach((p,i)=>{if(i>0&&p.s<sorted[i-1].s)tr=i+1;rk.push(tr);});sorted.forEach((p,i)=>{const r=rk[i],rc=r===1?'rank-1':r===2?'rank-2':r===3?'rank-3':'rank-other',ri=r===1?'🥇':r===2?'🥈':r===3?'🥉':`#${r}`;let sc2='streak-cold',st2=`${p.correct}/${matches.length} correct`;if(p.streak>=3){sc2='streak-hot';st2=`🔥 ${p.streak}-match streak`;}else if(p.streak>=1){sc2='streak-ok';st2=`✓ ${p.streak}-match streak`;}lb.innerHTML+=`<div class="player-card ${rc}"><div class="rank-num">${ri}</div><div class="avatar" style="background:${p.bg};--av-c1:${p.c1};--av-c2:${p.c2};"><span style="color:${p.c1};font-family:'Bebas Neue',sans-serif;font-size:17px;position:relative;z-index:1;">${p.ini}</span></div><div class="player-info"><div class="player-name">${p.name}</div><div class="player-meta"><span class="streak-badge ${sc2}">${st2}</span><span class="correct-count">${p.correct}/${matches.length} correct</span></div></div><div class="score-right"><div class="score-pts">${p.s}</div><div class="score-lbl">POINTS</div></div></div>`;});}
 function renderLog(){const c=document.getElementById('matchLog');if(!matches.length){c.innerHTML='<div class="empty-log">No matches yet.</div>';return;}const t={};PLAYERS.forEach(p=>t[p.name]=0);const h=PLAYERS.map(p=>`<th title="${p.name}" style="color:${p.c1}">${p.ini}</th>`).join('');const rows=matches.map((m,idx)=>{const cr=m.correct||[],pe=cr.length?PTS/cr.length:0;const cells=PLAYERS.map(p=>{const ok=cr.includes(p.name);if(ok)t[p.name]+=pe;return ok?`<td><span class="c-yes">✓</span></td>`:`<td><span class="c-no">·</span></td>`;}).join('');const pc=cr.length?`<td><span class="pts-val">${Math.round(pe)}</span></td>`:`<td><span class="pts-nil">—</span></td>`;const del=adminUnlocked?`<td><button class="del-btn" onclick="delMatch(${idx})">✕</button></td>`:`<td></td>`;return `<tr><td class="td-m"><span class="m-date">${m.date||''}</span><span class="m-teams">${m.teams||''}</span><span class="m-winner">▶ ${m.winner||''}</span></td>${cells}${pc}${del}</tr>`;}).join('');const tc=PLAYERS.map(p=>`<td class="total-pts-cell" style="color:${p.c1}">${Math.round(t[p.name])}</td>`).join('');c.innerHTML=`<table><thead><tr><th class="th-m">MATCH</th>${h}<th class="th-pts">PTS</th><th></th></tr></thead><tbody>${rows}<tr class="totals-row"><td class="td-m totals-lbl">TOTAL</td>${tc}<td></td><td></td></tr></tbody></table>`;}
-function renderUpcoming(){document.getElementById('upcomingMatches').innerHTML=SCHEDULE.map(m=>`<div class="match-tile"><div><div class="match-tile-teams">${m.teams}</div><div class="match-tile-meta"><span>${m.date}</span>${m.venue}</div></div><span class="match-status status-upcoming">🗓 UPCOMING</span></div>`).join('');}
+function renderUpcoming(){
+  const el=document.getElementById('upcomingMatches');
+  if(!liveSchedule.length){el.innerHTML='<div class="loading-box"><div class="spin">⚙</div><div>Loading IPL schedule...</div></div>';return;}
+  el.innerHTML=liveSchedule.map(m=>{
+    const sc=m.status==='live'?'status-upcoming" style="background:rgba(57,255,20,0.12);color:var(--green);border-color:rgba(57,255,20,0.3);animation:blink 1.5s ease-in-out infinite':m.status==='completed'?'status-upcoming" style="background:rgba(255,107,0,0.1);color:var(--orange);border-color:rgba(255,107,0,0.25)':'status-upcoming';
+    const lbl=m.status==='live'?'🔴 LIVE':m.status==='completed'?'✅ DONE':'🗓 UPCOMING';
+    const winBit=m.winner?`<span style="display:inline-block;background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);color:var(--green);font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:20px;margin-left:8px;">🏆 ${m.winner}</span>`:'';
+    return `<div class="match-tile"><div><div class="match-tile-teams">${m.teams}${winBit}</div><div class="match-tile-meta"><span>${m.date}</span>${m.venue}</div></div><span class="match-status ${sc}">${lbl}</span></div>`;
+  }).join('');
+}
+
+async function fetchSchedule(){
+  try{
+    const res=await fetch(`https://api.cricapi.com/v1/cricScore?apikey=${CRIC_API_KEY}`);
+    const data=await res.json();
+    if(data.status!=='success'||!data.data){dlog('CricAPI schedule: no data','warn');return;}
+    const ipl=data.data.filter(m=>m.name&&(m.name.includes('Indian Premier League')||m.name.includes('IPL')));
+    if(!ipl.length){dlog('CricAPI: no IPL matches found','warn');return;}
+    liveSchedule=ipl.map(m=>({
+      date:m.dateTimeGMT?new Date(m.dateTimeGMT).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—',
+      teams:m.t1&&m.t2?`${m.t1} vs ${m.t2}`:m.name,
+      venue:m.venue||'',
+      status:m.matchStarted?(m.matchEnded?'completed':'live'):'upcoming',
+      winner:m.matchEnded?m.status||'':'',
+      t1:m.t1||'',t2:m.t2||'',apiName:m.name||''
+    }));
+    dlog('CricAPI: loaded '+liveSchedule.length+' IPL matches','ok');
+    renderUpcoming();
+    // Also refresh admin dropdown if open
+    if(adminUnlocked)renderAdminToday();
+  }catch(e){dlog('CricAPI schedule fetch failed: '+e.message,'err');}
+}
 function renderAll(){renderTicker();renderStats();renderLB();renderLog();}
 
 /* ══════ ADMIN ══════ */
@@ -519,7 +551,7 @@ function toast(m,e){const t=document.getElementById('toast');t.textContent=m;t.s
 
 /* ══════ INIT ══════ */
 const cached=cacheGet();matches=cached?.matches?.length?cached.matches:JSON.parse(JSON.stringify(SEED));todayMatch=cached?.todayMatch||null;
-renderAll();renderUpcoming();renderToday();pullData();
+renderAll();renderUpcoming();renderToday();pullData();fetchSchedule();
 setInterval(()=>{if(!adminUnlocked)pullData();},30000);
 </script>
 </body>
