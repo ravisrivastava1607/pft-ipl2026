@@ -264,6 +264,7 @@ let liveSchedule=[]; // populated from CricAPI
 
 let matches=[],todayMatch=null,predState={},adminUnlocked=false;
 let autoResultBusy=false,lastAutoResultCheck=0;
+let autoResultMsg='';
 
 function dlog(m,t){const el=document.getElementById('debugLog');if(!el)return;const c=t==='ok'?'d-ok':t==='err'?'d-err':t==='warn'?'d-warn':'d-info';el.innerHTML+=`<span class="${c}">[${new Date().toLocaleTimeString()}] ${m}</span><br>`;el.scrollTop=el.scrollHeight;}
 function cacheSet(d){try{localStorage.setItem(LS_CACHE,JSON.stringify(d));}catch(e){}}
@@ -357,7 +358,7 @@ function renderAdminToday(){
       <div class="btn-row">
         <button class="btn-save" onclick="fetchResult()" id="fetchResultBtn">🔄 Check Result (CricAPI)</button>
       </div>
-      <div id="fetchResultStatus" style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:10px;"></div>
+      <div id="fetchResultStatus" style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:10px;">${autoResultMsg}</div>
       <div style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:14px;">Or declare manually:</div>
       <div class="btn-row" style="margin-top:8px;">
         <button class="btn-save" onclick="manualWinner('${tm.teamA}')">🏆 ${tm.teamA} WON</button>
@@ -390,6 +391,7 @@ async function qVote(name,team){
   }
 
   await pushData();renderToday();
+  if(todayMatch.status==='revealed'&&vc>=PLAYERS.length)autoFetchResult(true);
   if(todayMatch.status==='revealed'&&vc>=PLAYERS.length)toast('All votes in — revealed! 👁');
 }
 
@@ -415,8 +417,17 @@ function hasTeam(text,team){
 }
 async function getCricApiMatchResult(){
   if(!todayMatch)throw new Error('No active match');
-  const res=await fetch(`https://api.cricapi.com/v1/cricScore?apikey=${CRIC_API_KEY}`);
-  const data=await res.json();
+  let data=null;
+  try{
+    const res=await fetch(`https://api.cricapi.com/v1/cricScore?apikey=${CRIC_API_KEY}`);
+    data=await res.json();
+  }catch(e){
+    dlog('cricScore result lookup failed: '+e.message,'warn');
+  }
+  if(!data||data.status!=='success'||!data.data){
+    const res2=await fetch(`https://api.cricapi.com/v1/currentMatches?apikey=${CRIC_API_KEY}&offset=0`);
+    data=await res2.json();
+  }
   if(data.status!=='success'||!data.data)throw new Error(data.reason||'API error');
 
   const tm=todayMatch;
@@ -431,7 +442,7 @@ async function getCricApiMatchResult(){
     if(hasTeam(text,tm.teamA)&&hasTeam(text,tm.teamB)){found=m;break;}
   }
 
-  if(!found)return {state:'not_found'};
+  if(!found)return {state:'not_found',count:iplMatches.length};
   if(!found.matchEnded)return {state:'in_progress',match:found};
 
   const status=found.status||'';
@@ -454,52 +465,20 @@ async function fetchResult(opts={}){
   if(el)el.textContent='Fetching from CricAPI...';if(btn)btn.disabled=true;
 
   try{
-    const res=await fetch(`https://api.cricapi.com/v1/cricScore?apikey=${CRIC_API_KEY}`);
-    const data=await res.json();
-    if(data.status!=='success'||!data.data)throw new Error('API error');
-
-    // Find matching IPL match
-    const tm=todayMatch;
-    const iplMatches=data.data.filter(m=>{
-      const text=[m.name,m.series,m.t1,m.t2].filter(Boolean).join(' ');
-      return /Indian Premier League|IPL/i.test(text)||hasTeam(text,tm.teamA)||hasTeam(text,tm.teamB);
-    });
-
-    // Try to match by team names
-    let found=null;
-    for(const m of iplMatches){
-      const n=(m.t1||'')+' '+(m.t2||'')+' '+(m.name||'');
-      const hasA=hasTeam(n,tm.teamA);
-      const hasB=hasTeam(n,tm.teamB);
-      if(hasA&&hasB){found=m;break;}
-    }
-
-    if(!found){if(el)el.innerHTML='<span style="color:var(--gold)">⚠ Match not found in API. Use manual buttons below.</span>';if(btn)btn.disabled=false;return false;}
-    if(!found.matchEnded){if(el)el.innerHTML='<span style="color:var(--blue)">⏳ Match still in progress. Try again later.</span>';if(btn)btn.disabled=false;return false;}
-
-    // Extract winner from status string (e.g. "Mumbai Indians won by 5 wickets")
-    const status=found.status||'';
-    let winner=null;
-    // Check if teamA or teamB name appears in the status
-    if(hasTeam(status,tm.teamA))winner=tm.teamA;
-    else if(hasTeam(status,tm.teamB))winner=tm.teamB;
-    // Also check full team names from the API
-    else if(found.t1&&status.includes(found.t1)){
-      // Map API team name to our short name
-      winner=hasTeam(found.t1,tm.teamA)?tm.teamA:tm.teamB;
-    } else if(found.t2&&status.includes(found.t2)){
-      winner=hasTeam(found.t2,tm.teamA)?tm.teamA:tm.teamB;
-    }
-
-    if(!winner){if(el)el.innerHTML=`<span style="color:var(--gold)">⚠ Couldn't parse winner from: "${status}". Use manual buttons.</span>`;if(btn)btn.disabled=false;return false;}
+    const result=await getCricApiMatchResult();
+    if(result.state==='not_found'){autoResultMsg='Last auto check: match not found in CricAPI.';if(el)el.innerHTML='<span style="color:var(--gold)">⚠ Match not found in API. Use manual buttons below.</span>';if(btn)btn.disabled=false;return false;}
+    if(result.state==='in_progress'){autoResultMsg='Last auto check: match still in progress.';if(el)el.innerHTML='<span style="color:var(--blue)">⏳ Match still in progress. Try again later.</span>';if(btn)btn.disabled=false;return false;}
+    if(result.state==='winner_unknown'){autoResultMsg='Last auto check: winner not parsed from API status.';if(el)el.innerHTML=`<span style="color:var(--gold)">⚠ Couldn't parse winner from: "${result.status}". Use manual buttons.</span>`;if(btn)btn.disabled=false;return false;}
 
     // AUTO-SETTLE!
-    if(el)el.innerHTML=`<span style="color:var(--green)">✅ ${winner} won! Updating scores...</span>`;
-    await settleMatch(winner);
-    toast(`🏆 ${winner} wins! Scores auto-updated!`);
+    autoResultMsg=`Last auto check: ${result.winner} won. Updating scores...`;
+    if(el)el.innerHTML=`<span style="color:var(--green)">✅ ${result.winner} won! Updating scores...</span>`;
+    await settleMatch(result.winner);
+    toast(`🏆 ${result.winner} wins! Scores auto-updated!`);
     return true;
 
   }catch(e){
+    autoResultMsg='Last auto check failed: '+e.message;
     if(el)el.innerHTML='<span style="color:#ff7777">❌ '+e.message+'. Use manual buttons.</span>';
     dlog('CricAPI: '+e.message,'err');
   }
@@ -507,12 +486,14 @@ async function fetchResult(opts={}){
   return false;
 }
 
-async function autoFetchResult(){
+async function autoFetchResult(force=false){
   if(!adminUnlocked||autoResultBusy||!todayMatch||todayMatch.status!=='revealed')return;
   const now=Date.now();
-  if(now-lastAutoResultCheck<60000)return;
+  if(!force&&now-lastAutoResultCheck<60000)return;
   autoResultBusy=true;lastAutoResultCheck=now;
   try{
+    autoResultMsg='Auto-checking result...';
+    const el=document.getElementById('fetchResultStatus');if(el)el.textContent=autoResultMsg;
     dlog('Auto-checking match result...','info');
     const settled=await fetchResult({silent:true});
     if(settled)dlog('Auto result settled and scores updated','ok');
@@ -663,6 +644,17 @@ function saveScriptUrl(){const u=document.getElementById('scriptUrlInput').value
 function updateScriptDisplay(){const el=document.getElementById('currentScriptUrl');if(el)el.textContent=SCRIPT_URL;const inp=document.getElementById('scriptUrlInput');if(inp)inp.value=SCRIPT_URL;}
 async function seedDatabase(){if(!confirm('Replace with 6 seed matches?'))return;matches=JSON.parse(JSON.stringify(SEED));todayMatch=null;const ok=await pushData();if(ok){renderAll();renderToday();toast('Seeded! 🌱');}}
 function toast(m,e){const t=document.getElementById('toast');t.textContent=m;t.style.borderColor=e?'#ff5555':'var(--green)';t.style.color=e?'#ff5555':'var(--green)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+const baseTryUnlock=tryUnlock;
+tryUnlock=function(){
+  baseTryUnlock();
+  if(adminUnlocked)autoFetchResult(true);
+};
+const baseRenderAdminToday=renderAdminToday;
+renderAdminToday=function(){
+  baseRenderAdminToday();
+  if(todayMatch?.status==='revealed'&&adminUnlocked&&!autoResultMsg)autoFetchResult(true);
+};
 
 /* ══════ INIT ══════ */
 const cached=cacheGet();matches=cached?.matches?.length?cached.matches:JSON.parse(JSON.stringify(SEED));todayMatch=cached?.todayMatch||null;
