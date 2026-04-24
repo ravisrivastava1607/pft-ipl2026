@@ -415,6 +415,22 @@ function hasTeam(text,team){
   const hay=(text||'').toUpperCase();
   return teamAliases(team).some(a=>hay.includes(a));
 }
+function apiMatchText(m){
+  const parts=[m.name,m.series,m.t1,m.t2,m.t1s,m.t2s,m.status,m.venue,m.winner,m.matchWinner];
+  if(Array.isArray(m.teams))parts.push(...m.teams);
+  if(Array.isArray(m.teamInfo))m.teamInfo.forEach(t=>parts.push(t.name,t.shortname));
+  return parts.filter(Boolean).join(' ');
+}
+function resultWinnerFromMatch(m,tm){
+  const text=apiMatchText(m);
+  const status=m.status||'';
+  const winnerText=[m.winner,m.matchWinner,status].filter(Boolean).join(' ');
+  if(hasTeam(winnerText,tm.teamA))return tm.teamA;
+  if(hasTeam(winnerText,tm.teamB))return tm.teamB;
+  if(hasTeam(text,tm.teamA)&&hasTeam(status,tm.teamA))return tm.teamA;
+  if(hasTeam(text,tm.teamB)&&hasTeam(status,tm.teamB))return tm.teamB;
+  return null;
+}
 async function getCricApiMatchResult(){
   if(!todayMatch)throw new Error('No active match');
   let data=null;
@@ -432,25 +448,24 @@ async function getCricApiMatchResult(){
 
   const tm=todayMatch;
   const iplMatches=data.data.filter(m=>{
-    const text=[m.name,m.series,m.t1,m.t2].filter(Boolean).join(' ');
+    const text=apiMatchText(m);
     return /Indian Premier League|IPL/i.test(text)||hasTeam(text,tm.teamA)||hasTeam(text,tm.teamB);
   });
 
   let found=null;
   for(const m of iplMatches){
-    const text=[m.t1,m.t2,m.name,m.status].filter(Boolean).join(' ');
+    const text=apiMatchText(m);
     if(hasTeam(text,tm.teamA)&&hasTeam(text,tm.teamB)){found=m;break;}
   }
 
-  if(!found)return {state:'not_found',count:iplMatches.length};
+  if(!found){
+    dlog('CricAPI candidates checked: '+iplMatches.slice(0,5).map(apiMatchText).join(' || '),'warn');
+    return {state:'not_found',count:iplMatches.length};
+  }
   if(!found.matchEnded)return {state:'in_progress',match:found};
 
   const status=found.status||'';
-  let winner=null;
-  if(hasTeam(status,tm.teamA))winner=tm.teamA;
-  else if(hasTeam(status,tm.teamB))winner=tm.teamB;
-  else if(found.t1&&hasTeam(found.t1,tm.teamA)&&hasTeam(status,found.t1))winner=tm.teamA;
-  else if(found.t2&&hasTeam(found.t2,tm.teamB)&&hasTeam(status,found.t2))winner=tm.teamB;
+  const winner=resultWinnerFromMatch(found,tm);
 
   if(!winner)return {state:'winner_unknown',match:found,status};
   return {state:'ended',winner,match:found,status};
@@ -466,7 +481,7 @@ async function fetchResult(opts={}){
 
   try{
     const result=await getCricApiMatchResult();
-    if(result.state==='not_found'){autoResultMsg='Last auto check: match not found in CricAPI.';if(el)el.innerHTML='<span style="color:var(--gold)">⚠ Match not found in API. Use manual buttons below.</span>';if(btn)btn.disabled=false;return false;}
+    if(result.state==='not_found'){autoResultMsg='Last auto check: match not found in CricAPI candidates.';if(el)el.innerHTML='<span style="color:var(--gold)">⚠ Match not found in API candidates. Use manual buttons below.</span>';if(btn)btn.disabled=false;return false;}
     if(result.state==='in_progress'){autoResultMsg='Last auto check: match still in progress.';if(el)el.innerHTML='<span style="color:var(--blue)">⏳ Match still in progress. Try again later.</span>';if(btn)btn.disabled=false;return false;}
     if(result.state==='winner_unknown'){autoResultMsg='Last auto check: winner not parsed from API status.';if(el)el.innerHTML=`<span style="color:var(--gold)">⚠ Couldn't parse winner from: "${result.status}". Use manual buttons.</span>`;if(btn)btn.disabled=false;return false;}
 
