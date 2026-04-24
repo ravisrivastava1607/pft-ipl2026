@@ -462,10 +462,10 @@ async function getCricApiMatchResult(){
     dlog('CricAPI candidates checked: '+iplMatches.slice(0,5).map(apiMatchText).join(' || '),'warn');
     return {state:'not_found',count:iplMatches.length};
   }
-  if(!found.matchEnded)return {state:'in_progress',match:found};
-
   const status=found.status||'';
   const winner=resultWinnerFromMatch(found,tm);
+  if(winner)return {state:'ended',winner,match:found,status};
+  if(!found.matchEnded)return {state:'in_progress',match:found,status};
 
   if(!winner)return {state:'winner_unknown',match:found,status};
   return {state:'ended',winner,match:found,status};
