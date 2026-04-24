@@ -263,6 +263,7 @@ const SEED=[
 let liveSchedule=[]; // populated from CricAPI
 
 let matches=[],todayMatch=null,predState={},adminUnlocked=false;
+let autoResultBusy=false,lastAutoResultCheck=0;
 
 function dlog(m,t){const el=document.getElementById('debugLog');if(!el)return;const c=t==='ok'?'d-ok':t==='err'?'d-err':t==='warn'?'d-warn':'d-info';el.innerHTML+=`<span class="${c}">[${new Date().toLocaleTimeString()}] ${m}</span><br>`;el.scrollTop=el.scrollHeight;}
 function cacheSet(d){try{localStorage.setItem(LS_CACHE,JSON.stringify(d));}catch(e){}}
@@ -392,12 +393,65 @@ async function qVote(name,team){
   if(todayMatch.status==='revealed'&&vc>=PLAYERS.length)toast('All votes in — revealed! 👁');
 }
 
+function teamAliases(team){
+  const map={
+    MI:['MI','MUMBAI INDIANS'],
+    CSK:['CSK','CHENNAI SUPER KINGS'],
+    RCB:['RCB','ROYAL CHALLENGERS BENGALURU','ROYAL CHALLENGERS BANGALORE'],
+    KKR:['KKR','KOLKATA KNIGHT RIDERS'],
+    DC:['DC','DELHI CAPITALS'],
+    RR:['RR','RAJASTHAN ROYALS'],
+    PBKS:['PBKS','PUNJAB KINGS'],
+    SRH:['SRH','SUNRISERS HYDERABAD'],
+    LSG:['LSG','LUCKNOW SUPER GIANTS'],
+    GT:['GT','GUJARAT TITANS']
+  };
+  const key=(team||'').toUpperCase();
+  return map[key]||[key];
+}
+function hasTeam(text,team){
+  const hay=(text||'').toUpperCase();
+  return teamAliases(team).some(a=>hay.includes(a));
+}
+async function getCricApiMatchResult(){
+  if(!todayMatch)throw new Error('No active match');
+  const res=await fetch(`https://api.cricapi.com/v1/cricScore?apikey=${CRIC_API_KEY}`);
+  const data=await res.json();
+  if(data.status!=='success'||!data.data)throw new Error(data.reason||'API error');
+
+  const tm=todayMatch;
+  const iplMatches=data.data.filter(m=>{
+    const text=[m.name,m.series,m.t1,m.t2].filter(Boolean).join(' ');
+    return /Indian Premier League|IPL/i.test(text)||hasTeam(text,tm.teamA)||hasTeam(text,tm.teamB);
+  });
+
+  let found=null;
+  for(const m of iplMatches){
+    const text=[m.t1,m.t2,m.name,m.status].filter(Boolean).join(' ');
+    if(hasTeam(text,tm.teamA)&&hasTeam(text,tm.teamB)){found=m;break;}
+  }
+
+  if(!found)return {state:'not_found'};
+  if(!found.matchEnded)return {state:'in_progress',match:found};
+
+  const status=found.status||'';
+  let winner=null;
+  if(hasTeam(status,tm.teamA))winner=tm.teamA;
+  else if(hasTeam(status,tm.teamB))winner=tm.teamB;
+  else if(found.t1&&hasTeam(found.t1,tm.teamA)&&hasTeam(status,found.t1))winner=tm.teamA;
+  else if(found.t2&&hasTeam(found.t2,tm.teamB)&&hasTeam(status,found.t2))winner=tm.teamB;
+
+  if(!winner)return {state:'winner_unknown',match:found,status};
+  return {state:'ended',winner,match:found,status};
+}
+
 /* ══════ FETCH RESULT FROM CRICAPI ══════ */
-async function fetchResult(){
+async function fetchResult(opts={}){
   const el=document.getElementById('fetchResultStatus');
   const btn=document.getElementById('fetchResultBtn');
-  if(!todayMatch||!el)return;
-  el.textContent='Fetching from CricAPI...';if(btn)btn.disabled=true;
+  const silent=!!opts.silent;
+  if(!todayMatch||(!el&&!silent))return false;
+  if(el)el.textContent='Fetching from CricAPI...';if(btn)btn.disabled=true;
 
   try{
     const res=await fetch(`https://api.cricapi.com/v1/cricScore?apikey=${CRIC_API_KEY}`);
@@ -406,46 +460,65 @@ async function fetchResult(){
 
     // Find matching IPL match
     const tm=todayMatch;
-    const iplMatches=data.data.filter(m=>m.name&&(m.name.includes('Indian Premier League')||m.name.includes('IPL')));
+    const iplMatches=data.data.filter(m=>{
+      const text=[m.name,m.series,m.t1,m.t2].filter(Boolean).join(' ');
+      return /Indian Premier League|IPL/i.test(text)||hasTeam(text,tm.teamA)||hasTeam(text,tm.teamB);
+    });
 
     // Try to match by team names
     let found=null;
     for(const m of iplMatches){
       const n=(m.t1||'')+' '+(m.t2||'')+' '+(m.name||'');
-      const hasA=n.toUpperCase().includes(tm.teamA.toUpperCase())||n.includes(tm.teamA);
-      const hasB=n.toUpperCase().includes(tm.teamB.toUpperCase())||n.includes(tm.teamB);
+      const hasA=hasTeam(n,tm.teamA);
+      const hasB=hasTeam(n,tm.teamB);
       if(hasA&&hasB){found=m;break;}
     }
 
-    if(!found){el.innerHTML='<span style="color:var(--gold)">⚠ Match not found in API. Use manual buttons below.</span>';if(btn)btn.disabled=false;return;}
-    if(!found.matchEnded){el.innerHTML='<span style="color:var(--blue)">⏳ Match still in progress. Try again later.</span>';if(btn)btn.disabled=false;return;}
+    if(!found){if(el)el.innerHTML='<span style="color:var(--gold)">⚠ Match not found in API. Use manual buttons below.</span>';if(btn)btn.disabled=false;return false;}
+    if(!found.matchEnded){if(el)el.innerHTML='<span style="color:var(--blue)">⏳ Match still in progress. Try again later.</span>';if(btn)btn.disabled=false;return false;}
 
     // Extract winner from status string (e.g. "Mumbai Indians won by 5 wickets")
     const status=found.status||'';
     let winner=null;
     // Check if teamA or teamB name appears in the status
-    if(status.toLowerCase().includes(tm.teamA.toLowerCase()))winner=tm.teamA;
-    else if(status.toLowerCase().includes(tm.teamB.toLowerCase()))winner=tm.teamB;
+    if(hasTeam(status,tm.teamA))winner=tm.teamA;
+    else if(hasTeam(status,tm.teamB))winner=tm.teamB;
     // Also check full team names from the API
     else if(found.t1&&status.includes(found.t1)){
       // Map API team name to our short name
-      winner=(found.t1.toUpperCase().includes(tm.teamA.toUpperCase()))?tm.teamA:tm.teamB;
+      winner=hasTeam(found.t1,tm.teamA)?tm.teamA:tm.teamB;
     } else if(found.t2&&status.includes(found.t2)){
-      winner=(found.t2.toUpperCase().includes(tm.teamA.toUpperCase()))?tm.teamA:tm.teamB;
+      winner=hasTeam(found.t2,tm.teamA)?tm.teamA:tm.teamB;
     }
 
-    if(!winner){el.innerHTML=`<span style="color:var(--gold)">⚠ Couldn't parse winner from: "${status}". Use manual buttons.</span>`;if(btn)btn.disabled=false;return;}
+    if(!winner){if(el)el.innerHTML=`<span style="color:var(--gold)">⚠ Couldn't parse winner from: "${status}". Use manual buttons.</span>`;if(btn)btn.disabled=false;return false;}
 
     // AUTO-SETTLE!
-    el.innerHTML=`<span style="color:var(--green)">✅ ${winner} won! Updating scores...</span>`;
+    if(el)el.innerHTML=`<span style="color:var(--green)">✅ ${winner} won! Updating scores...</span>`;
     await settleMatch(winner);
     toast(`🏆 ${winner} wins! Scores auto-updated!`);
+    return true;
 
   }catch(e){
-    el.innerHTML='<span style="color:#ff7777">❌ '+e.message+'. Use manual buttons.</span>';
+    if(el)el.innerHTML='<span style="color:#ff7777">❌ '+e.message+'. Use manual buttons.</span>';
     dlog('CricAPI: '+e.message,'err');
   }
   if(btn)btn.disabled=false;
+  return false;
+}
+
+async function autoFetchResult(){
+  if(!adminUnlocked||autoResultBusy||!todayMatch||todayMatch.status!=='revealed')return;
+  const now=Date.now();
+  if(now-lastAutoResultCheck<60000)return;
+  autoResultBusy=true;lastAutoResultCheck=now;
+  try{
+    dlog('Auto-checking match result...','info');
+    const settled=await fetchResult({silent:true});
+    if(settled)dlog('Auto result settled and scores updated','ok');
+  }finally{
+    autoResultBusy=false;
+  }
 }
 
 /* ══════ MANUAL WINNER ══════ */
@@ -457,11 +530,13 @@ async function manualWinner(team){
 
 /* ══════ SETTLE MATCH (shared logic) ══════ */
 async function settleMatch(winner){
-  todayMatch.winner=winner;todayMatch.status='settled';
-  const votes=todayMatch.votes||{};
+  const settledMatch={...todayMatch,winner,status:'settled',revealed:true};
+  const votes=settledMatch.votes||{};
   const correct=PLAYERS.filter(p=>votes[p.name]===winner).map(p=>p.name);
   await pullData();
-  matches.push({date:todayMatch.date,teams:todayMatch.teams,winner,correct});
+  todayMatch=settledMatch;
+  const exists=matches.some(m=>m.date===settledMatch.date&&m.teams===settledMatch.teams&&m.winner===winner);
+  if(!exists)matches.push({date:settledMatch.date,teams:settledMatch.teams,winner,correct});
   await pushData();renderAll();renderToday();
 }
 
@@ -592,7 +667,10 @@ function toast(m,e){const t=document.getElementById('toast');t.textContent=m;t.s
 /* ══════ INIT ══════ */
 const cached=cacheGet();matches=cached?.matches?.length?cached.matches:JSON.parse(JSON.stringify(SEED));todayMatch=cached?.todayMatch||null;
 renderAll();renderUpcoming();renderToday();pullData();fetchSchedule();
-setInterval(()=>{if(!adminUnlocked)pullData();},30000);
+setInterval(async()=>{
+  if(!adminUnlocked)await pullData();
+  await autoFetchResult();
+},30000);
 </script>
 </body>
 </html>
