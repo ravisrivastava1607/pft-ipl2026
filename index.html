@@ -710,9 +710,9 @@ async function fetchResult(opts = {}) {
   }
 }
 
-// Auto-called silently every 60s when admin is open and match is revealed
+// Auto-called silently when any open browser sees a revealed match.
 async function autoFetchResult(force = false) {
-  if (!adminUnlocked || autoResultBusy) return;
+  if (autoResultBusy) return;
   if (!todayMatch || todayMatch.status !== 'revealed') return;
 
   const now = Date.now();
@@ -955,6 +955,7 @@ Ashutosh: ${tm.teamA}" style="width:100%;resize:vertical;background:var(--bg1);b
       <div class="btn-row" style="margin-top:10px;">
         <button class="btn-save" style="font-size:11px;padding:8px 14px;" onclick="previewBulkVotes()">Preview</button>
         <button class="btn-green" style="font-size:11px;padding:8px 14px;" onclick="applyBulkVotes()">Apply Votes</button>
+        <button class="btn-gold" style="font-size:11px;padding:8px 14px;" onclick="fetchVotesForCurrentMatch(true)">Fetch Sheet Votes Now</button>
       </div>
       <div id="bulkVotesStatus" style="font-family:var(--fm);font-size:11px;color:var(--t3);line-height:1.7;margin-top:8px;">Accepts full names, first names, or initials with ${tm.teamA}/${tm.teamB}.</div>
     </div>
@@ -1201,6 +1202,7 @@ function votesPayloadToText(data) {
 
 async function fetchVotesForCurrentMatch(force = false) {
   if (!todayMatch || todayMatch.status !== 'voting' || autoVoteBusy || votesComplete()) return false;
+  const statusEl = document.getElementById('bulkVotesStatus');
 
   const key = `${todayMatch.dateKey || istParts().key}|${todayMatch.slot || ''}|${todayMatch.teams}`;
   const now = Date.now();
@@ -1208,6 +1210,7 @@ async function fetchVotesForCurrentMatch(force = false) {
 
   autoVoteBusy = true;
   lastAutoVoteCheck[key] = now;
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--blue)">Fetching votes from Google Sheet...</span>';
 
   try {
     const params = new URLSearchParams({
@@ -1225,6 +1228,7 @@ async function fetchVotesForCurrentMatch(force = false) {
     const entries = Object.entries(parsed.applied);
     if (!entries.length) {
       dlog(`No sheet votes found yet for ${todayMatch.teams}`, 'warn');
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Connected, but no usable votes found. Check Name/Vote headers and team abbreviations.</span>';
       return false;
     }
 
@@ -1238,9 +1242,11 @@ async function fetchVotesForCurrentMatch(force = false) {
       todayMatch.status = 'revealed';
       todayMatch.revealed = true;
       dlog(`All votes fetched for ${todayMatch.teams}; revealed`, 'ok');
+      if (statusEl) statusEl.innerHTML = `<span style="color:var(--green)">Fetched all ${PLAYERS.length} votes. Revealing now.</span>`;
     } else {
       const count = Object.values(todayMatch.votes).filter(Boolean).length;
       dlog(`Fetched ${count}/${PLAYERS.length} votes for ${todayMatch.teams}; will retry`, 'info');
+      if (statusEl) statusEl.innerHTML = `<span style="color:var(--blue)">Fetched ${count}/${PLAYERS.length} votes. Will retry every 30 minutes.</span>`;
     }
 
     await pushData();
@@ -1250,6 +1256,7 @@ async function fetchVotesForCurrentMatch(force = false) {
     return complete;
   } catch(e) {
     dlog('Auto vote fetch: ' + e.message, 'err');
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ff7777">Sheet fetch failed: ${e.message}</span>`;
     return false;
   } finally {
     autoVoteBusy = false;
@@ -1306,6 +1313,7 @@ async function createTodayMatch() {
   renderAll();
   renderToday();
   toast('Voting OPEN! 🟢');
+  setTimeout(() => fetchVotesForCurrentMatch(true), 500);
 }
 
 async function cancelTodayMatch() {
