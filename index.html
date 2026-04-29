@@ -316,6 +316,11 @@ const LS_CACHE       = 'pft_cache_v5';
 const ADMIN_PASS     = 'IPL26';
 const PTS            = 70;
 const CRIC_API_KEY   = '50530cc0-8f6e-4bcb-a51d-318b4ff77b88';
+const AUTO_SLOTS     = [
+  { id:'15:30', label:'3:30 PM', hour:15, minute:30 },
+  { id:'19:30', label:'7:30 PM', hour:19, minute:30 }
+];
+const AUTO_VOTE_POLL_MS = 30 * 60 * 1000;
 
 let SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLim6JIsYGZsSpA_7A-PO0_2bu61dMEHeXqFfvfobAgxf3VaehBjkHTU_uaulCtLwE/exec';
 try { const s = localStorage.getItem(SCRIPT_URL_KEY); if (s && s.startsWith('https://script.google.com')) SCRIPT_URL = s; } catch(e) {}
@@ -356,6 +361,8 @@ let liveSchedule   = [];
 let autoResultBusy = false;
 let lastAutoResultCheck = 0;
 let autoResultMsg  = '';
+let autoVoteBusy   = false;
+let lastAutoVoteCheck = {};
 
 // ══════════════════════════════════════════════════════════
 //  UTILS
@@ -391,6 +398,39 @@ function toast(m, e) {
   t.style.color       = e ? '#ff5555' : 'var(--green)';
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function istParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(date).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+  return {
+    key: `${parts.year}-${parts.month}-${parts.day}`,
+    display: new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: 'numeric',
+      month: 'short'
+    }).format(date),
+    minutes: Number(parts.hour) * 60 + Number(parts.minute)
+  };
+}
+
+function slotMinutes(slot) {
+  return slot.hour * 60 + slot.minute;
+}
+
+function activeAutoSlots() {
+  const now = istParts();
+  return AUTO_SLOTS.filter(slot => now.minutes >= slotMinutes(slot));
 }
 
 // ══════════════════════════════════════════════════════════
@@ -907,6 +947,17 @@ function renderAdminToday() {
       <span class="vc-num">${vc}/${PLAYERS.length}</span> voted ·
       Status: <strong style="color:var(--blue)">${tm.status.toUpperCase()}</strong>
     </div>
+    <div style="margin-top:16px;padding:14px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg0);">
+      <div style="font-family:var(--fm);font-size:11px;color:var(--t3);letter-spacing:1.5px;margin-bottom:8px;">BULK PASTE VOTES:</div>
+      <textarea id="bulkVotesInput" rows="5" placeholder="Ravi ${tm.teamA}
+AM - ${tm.teamB}
+Ashutosh: ${tm.teamA}" style="width:100%;resize:vertical;background:var(--bg1);border:1px solid var(--bdr);border-radius:10px;color:var(--t1);font-family:var(--fm);font-size:12px;line-height:1.6;padding:10px 12px;outline:none;"></textarea>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn-save" style="font-size:11px;padding:8px 14px;" onclick="previewBulkVotes()">Preview</button>
+        <button class="btn-green" style="font-size:11px;padding:8px 14px;" onclick="applyBulkVotes()">Apply Votes</button>
+      </div>
+      <div id="bulkVotesStatus" style="font-family:var(--fm);font-size:11px;color:var(--t3);line-height:1.7;margin-top:8px;">Accepts full names, first names, or initials with ${tm.teamA}/${tm.teamB}.</div>
+    </div>
     <div style="font-family:var(--fm);font-size:11px;color:var(--t3);letter-spacing:1.5px;margin:14px 0 8px;">TAP TO RECORD EACH VOTE:</div>
     <div style="display:flex;flex-direction:column;gap:6px;">${voteRows}</div>
     ${allVotedMsg}
@@ -919,6 +970,118 @@ function renderAdminToday() {
 // ══════════════════════════════════════════════════════════
 //  QUICK VOTE
 // ══════════════════════════════════════════════════════════
+function cleanVoteText(text) {
+  return String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function teamVoteAliases(team) {
+  const aliases = [team];
+  Object.entries(TEAM_ABBR).forEach(([full, short]) => {
+    if (short === team) aliases.push(full);
+  });
+  return [...new Set(aliases.map(cleanVoteText).filter(Boolean))];
+}
+
+function playerVoteAliases(player) {
+  const parts = player.name.split(/\s+/).filter(Boolean);
+  return [...new Set([
+    player.name,
+    player.ini,
+    parts[0],
+    parts.map(part => part[0]).join('')
+  ].map(cleanVoteText).filter(Boolean))];
+}
+
+function lineHasAlias(line, alias) {
+  if (!alias) return false;
+  return new RegExp(`(^|\\s)${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`, 'i').test(line);
+}
+
+function parseBulkVotes(raw) {
+  if (!todayMatch) return { applied: {}, errors: ['No active match.'] };
+
+  const teamAliases = {
+    [todayMatch.teamA]: teamVoteAliases(todayMatch.teamA),
+    [todayMatch.teamB]: teamVoteAliases(todayMatch.teamB)
+  };
+  const applied = {};
+  const errors = [];
+
+  String(raw || '').split(/\r?\n/).forEach((line, index) => {
+    const original = line.trim();
+    if (!original) return;
+
+    const clean = cleanVoteText(original);
+    const players = PLAYERS.filter(player =>
+      playerVoteAliases(player).some(alias => lineHasAlias(clean, alias))
+    );
+    const teams = [todayMatch.teamA, todayMatch.teamB].filter(team =>
+      teamAliases[team].some(alias => lineHasAlias(clean, alias))
+    );
+
+    if (players.length !== 1 || teams.length !== 1) {
+      errors.push(`Line ${index + 1}: "${original}"`);
+      return;
+    }
+
+    applied[players[0].name] = teams[0];
+  });
+
+  return { applied, errors };
+}
+
+function previewBulkVotes() {
+  const box = document.getElementById('bulkVotesInput');
+  const out = document.getElementById('bulkVotesStatus');
+  if (!box || !out) return;
+
+  const parsed = parseBulkVotes(box.value);
+  const items = Object.entries(parsed.applied)
+    .map(([name, team]) => `${name.split(' ')[0]} = ${team}`)
+    .join('<br>');
+  const missed = parsed.errors.length
+    ? `<br><span style="color:var(--gold)">Check: ${parsed.errors.join('; ')}</span>`
+    : '';
+
+  out.innerHTML = items
+    ? `<span style="color:var(--green)">Ready to apply ${Object.keys(parsed.applied).length} vote(s):</span><br>${items}${missed}`
+    : `<span style="color:var(--gold)">No votes recognized. Use lines like "Ravi ${todayMatch.teamA}" or "AM ${todayMatch.teamB}".</span>${missed}`;
+}
+
+async function applyBulkVotes() {
+  if (!todayMatch || todayMatch.status === 'settled') return;
+
+  const box = document.getElementById('bulkVotesInput');
+  const out = document.getElementById('bulkVotesStatus');
+  if (!box || !out) return;
+
+  const parsed = parseBulkVotes(box.value);
+  const entries = Object.entries(parsed.applied);
+  if (!entries.length) {
+    previewBulkVotes();
+    return;
+  }
+
+  if (!todayMatch.votes) todayMatch.votes = {};
+  entries.forEach(([name, team]) => {
+    todayMatch.votes[name] = team;
+  });
+
+  const vc = Object.values(todayMatch.votes).filter(v => v).length;
+  if (vc >= PLAYERS.length && todayMatch.status === 'voting') {
+    todayMatch.status = 'revealed';
+    todayMatch.revealed = true;
+    dlog('All ' + PLAYERS.length + ' votes in via bulk paste -> auto-revealed', 'ok');
+  }
+
+  await pushData();
+  renderAll();
+  renderToday();
+
+  if (vc >= PLAYERS.length) setTimeout(() => autoFetchResult(true), 1000);
+  toast(`Applied ${entries.length} vote${entries.length !== 1 ? 's' : ''}`);
+}
+
 async function qVote(name, team) {
   if (!todayMatch || todayMatch.status === 'settled') return;
   if (!todayMatch.votes) todayMatch.votes = {};
@@ -960,6 +1123,158 @@ const TEAM_ABBR = {
   'Lucknow Super Giants':     'LSG',
   'Gujarat Titans':           'GT'
 };
+
+function scheduleMatchToTodayMatch(match, slot) {
+  const parts = (match.teams || '').split(' vs ');
+  const fullA = (parts[0] || '').trim();
+  const fullB = (parts[1] || fullA).trim();
+  const teamA = (TEAM_ABBR[fullA] || fullA).toUpperCase();
+  const teamB = (TEAM_ABBR[fullB] || fullB).toUpperCase();
+  return {
+    date: match.date,
+    dateKey: match.dateKey || istParts().key,
+    slot: slot.id,
+    slotLabel: slot.label,
+    teams: teamA + ' vs ' + teamB,
+    teamA,
+    teamB,
+    votes: {},
+    revealed: false,
+    winner: null,
+    status: 'voting',
+    autoOpened: true
+  };
+}
+
+function todayScheduleMatches() {
+  const now = istParts();
+  const today = liveSchedule.filter(match =>
+    (match.dateKey && match.dateKey === now.key) || (!match.dateKey && match.date === now.display)
+  );
+
+  return today.sort((a, b) => {
+    if (a.timeMinutes != null && b.timeMinutes != null) return a.timeMinutes - b.timeMinutes;
+    if (a.timeMinutes != null) return -1;
+    if (b.timeMinutes != null) return 1;
+    return 0;
+  });
+}
+
+function matchForSlot(slot) {
+  const matchesToday = todayScheduleMatches();
+  const index = AUTO_SLOTS.findIndex(item => item.id === slot.id);
+  return matchesToday[index] || null;
+}
+
+function recordedScheduleMatch(match) {
+  if (!match) return false;
+  const tm = scheduleMatchToTodayMatch(match, { id:'', label:'' });
+  return matches.some(item => item.date === tm.date && item.teams === tm.teams);
+}
+
+async function openAutoMatch(slot, match) {
+  todayMatch = scheduleMatchToTodayMatch(match, slot);
+  autoResultMsg = '';
+  await pushData();
+  renderAll();
+  renderToday();
+  dlog(`Auto-opened voting for ${todayMatch.teams} (${slot.label})`, 'ok');
+  await fetchVotesForCurrentMatch(true);
+}
+
+function votesComplete() {
+  return !!todayMatch?.votes && PLAYERS.every(player => todayMatch.votes[player.name]);
+}
+
+function votesPayloadToText(data) {
+  if (typeof data === 'string') return data;
+  if (typeof data?.text === 'string') return data.text;
+  if (typeof data?.votesText === 'string') return data.votesText;
+  if (Array.isArray(data?.votes)) {
+    return data.votes.map(row => {
+      if (typeof row === 'string') return row;
+      return `${row.name || row.player || ''} ${row.vote || row.team || row.pick || ''}`.trim();
+    }).join('\n');
+  }
+  return '';
+}
+
+async function fetchVotesForCurrentMatch(force = false) {
+  if (!todayMatch || todayMatch.status !== 'voting' || autoVoteBusy || votesComplete()) return false;
+
+  const key = `${todayMatch.dateKey || istParts().key}|${todayMatch.slot || ''}|${todayMatch.teams}`;
+  const now = Date.now();
+  if (!force && lastAutoVoteCheck[key] && now - lastAutoVoteCheck[key] < AUTO_VOTE_POLL_MS) return false;
+
+  autoVoteBusy = true;
+  lastAutoVoteCheck[key] = now;
+
+  try {
+    const params = new URLSearchParams({
+      action: 'getVotes',
+      date: todayMatch.dateKey || istParts().key,
+      slot: todayMatch.slot || '',
+      teams: todayMatch.teams
+    });
+    const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+    if (!res.ok) throw new Error('Votes HTTP ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const parsed = parseBulkVotes(votesPayloadToText(data));
+    const entries = Object.entries(parsed.applied);
+    if (!entries.length) {
+      dlog(`No sheet votes found yet for ${todayMatch.teams}`, 'warn');
+      return false;
+    }
+
+    if (!todayMatch.votes) todayMatch.votes = {};
+    entries.forEach(([name, team]) => {
+      todayMatch.votes[name] = team;
+    });
+
+    const complete = votesComplete();
+    if (complete) {
+      todayMatch.status = 'revealed';
+      todayMatch.revealed = true;
+      dlog(`All votes fetched for ${todayMatch.teams}; revealed`, 'ok');
+    } else {
+      const count = Object.values(todayMatch.votes).filter(Boolean).length;
+      dlog(`Fetched ${count}/${PLAYERS.length} votes for ${todayMatch.teams}; will retry`, 'info');
+    }
+
+    await pushData();
+    renderAll();
+    renderToday();
+    if (complete) setTimeout(() => autoFetchResult(true), 1000);
+    return complete;
+  } catch(e) {
+    dlog('Auto vote fetch: ' + e.message, 'err');
+    return false;
+  } finally {
+    autoVoteBusy = false;
+  }
+}
+
+async function runMatchAutomation() {
+  const dueSlots = activeAutoSlots();
+  if (!dueSlots.length || !liveSchedule.length) return;
+
+  if (todayMatch && todayMatch.status !== 'settled') {
+    if (todayMatch.status === 'voting') await fetchVotesForCurrentMatch();
+    else if (todayMatch.status === 'revealed') await autoFetchResult();
+    return;
+  }
+
+  for (const slot of dueSlots) {
+    if (todayMatch?.status === 'settled' && todayMatch.slot === slot.id) continue;
+    const match = matchForSlot(slot);
+    if (!match) continue;
+    if (recordedScheduleMatch(match)) continue;
+    await openAutoMatch(slot, match);
+    break;
+  }
+}
 
 async function createTodayMatch() {
   const sel = document.getElementById('pickMatch');
@@ -1025,6 +1340,8 @@ async function fetchSchedule() {
 
     return {
       date,
+      dateKey: rawDate ? istParts(new Date(rawDate)).key : '',
+      timeMinutes: rawDate ? istParts(new Date(rawDate)).minutes : null,
       teams,
       venue:  m.venue || '',
       status,
@@ -1051,6 +1368,7 @@ async function fetchSchedule() {
         dlog('✅ Loaded ' + liveSchedule.length + ' IPL matches from cricScore', 'ok');
         renderUpcoming();
         if (adminUnlocked) renderAdminToday();
+        await runMatchAutomation();
         return;
       }
       dlog('cricScore: no IPL matches in response', 'warn');
@@ -1073,6 +1391,7 @@ async function fetchSchedule() {
         dlog('✅ Loaded ' + liveSchedule.length + ' IPL matches from currentMatches', 'ok');
         renderUpcoming();
         if (adminUnlocked) renderAdminToday();
+        await runMatchAutomation();
         return;
       }
     }
@@ -1447,10 +1766,12 @@ renderUpcoming();
 renderToday();
 pullData();
 fetchSchedule();
+runMatchAutomation();
 
-// Poll every 30s: refresh data + auto-check result if revealed
+// Poll every 30s: refresh data, auto-open due matches, fetch votes, and auto-check results.
 setInterval(async () => {
   if (!adminUnlocked) await pullData();
+  await runMatchAutomation();
   await autoFetchResult();
 }, 30000);
 </script>
