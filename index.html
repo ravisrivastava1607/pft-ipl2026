@@ -364,6 +364,7 @@ let lastAutoResultCheck = 0;
 let autoResultMsg  = '';
 let autoVoteBusy   = false;
 let lastAutoVoteCheck = {};
+let remoteDataLoaded = false;
 
 // ══════════════════════════════════════════════════════════
 //  UTILS
@@ -450,12 +451,13 @@ async function pullData() {
     } else {
       const c = cacheGet();
       matches = c?.matches?.length ? c.matches : JSON.parse(JSON.stringify(SEED));
-      await pushData();
+      dlog('Remote database returned no matches; showing local fallback without overwriting remote data.', 'warn');
     }
 
     if (data.hasOwnProperty('todayMatch')) todayMatch = data.todayMatch || null;
     cacheSet({matches, todayMatch});
     renderAll(); renderToday();
+    remoteDataLoaded = true;
     setSyncState('live'); setSyncMsg('Live · ' + new Date().toLocaleTimeString());
   } catch(e) {
     dlog('Pull: ' + e.message, 'err');
@@ -463,6 +465,7 @@ async function pullData() {
     matches    = c?.matches    || JSON.parse(JSON.stringify(SEED));
     todayMatch = c?.todayMatch || null;
     renderAll(); renderToday();
+    remoteDataLoaded = false;
     setSyncState('error'); setSyncMsg('⚠ ' + e.message);
   }
 }
@@ -1265,6 +1268,11 @@ async function fetchVotesForCurrentMatch(force = false) {
 }
 
 async function runMatchAutomation() {
+  if (!remoteDataLoaded) {
+    dlog('Automation waiting for remote data sync before saving.', 'info');
+    return;
+  }
+
   const dueSlots = activeAutoSlots();
   if (!dueSlots.length || !liveSchedule.length) return;
 
@@ -1773,9 +1781,13 @@ todayMatch = cached?.todayMatch || null;
 renderAll();
 renderUpcoming();
 renderToday();
-pullData();
-fetchSchedule();
-runMatchAutomation();
+
+async function initApp() {
+  await pullData();
+  await fetchSchedule();
+  await runMatchAutomation();
+}
+initApp();
 
 // Poll every 30s: refresh data, auto-open due matches, fetch votes, and auto-check results.
 setInterval(async () => {
