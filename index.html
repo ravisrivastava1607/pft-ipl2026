@@ -45,26 +45,38 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .stat-val{font-family:var(--fd);font-size:36px;color:var(--gold);line-height:1;}.stat-lbl{font-family:var(--fm);font-size:10px;color:var(--t3);letter-spacing:1.5px;margin-top:4px;}.stat-icon{font-size:20px;margin-bottom:4px;}
 .lb-wrap{display:flex;flex-direction:column;gap:10px;}
 .player-card{display:grid;grid-template-columns:60px 52px 1fr auto;align-items:center;gap:14px;border-radius:16px;padding:16px 20px;position:relative;overflow:hidden;transition:transform 0.2s;}.player-card:hover{transform:translateY(-2px);}
-.player-card.rank-1{background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,140,0,0.06));border:1px solid rgba(255,215,0,0.35);box-shadow:0 4px 32px rgba(255,215,0,0.1);}
+/* === RANK 1 — supercharged animation === */
+.player-card.rank-1{background:linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,140,0,0.10),rgba(255,215,0,0.18));background-size:200% 200%;border:2px solid rgba(255,215,0,0.5);box-shadow:0 4px 32px rgba(255,215,0,0.25),0 0 60px rgba(255,140,0,0.12);animation:rank1Bg 4s ease-in-out infinite,rank1Float 5s ease-in-out infinite;}
+@keyframes rank1Bg{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
+@keyframes rank1Float{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+.player-card.rank-1 .rank-num,.player-card.rank-1 .score-pts{animation:rank1Pulse 1.8s ease-in-out infinite;}
+@keyframes rank1Pulse{0%,100%{transform:scale(1);text-shadow:0 0 20px rgba(255,215,0,0.5);}50%{transform:scale(1.06);text-shadow:0 0 32px rgba(255,215,0,1),0 0 12px #fff;}}
+.player-card.rank-1::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.15) 50%,transparent 70%);animation:shimmer 2.6s ease-in-out infinite;pointer-events:none;}
+@keyframes shimmer{0%{transform:translateX(-100%);}100%{transform:translateX(200%);}}
+.crown-float{position:absolute;top:-12px;left:14px;font-size:24px;z-index:5;filter:drop-shadow(0 0 12px rgba(255,215,0,0.8));animation:crownBob 2.4s ease-in-out infinite;pointer-events:none;}
+@keyframes crownBob{0%,100%{transform:translateY(0) rotate(-6deg);}50%{transform:translateY(-5px) rotate(6deg);}}
+.sparkle{position:absolute;font-size:14px;pointer-events:none;animation:sparkle 2s linear infinite;opacity:0;z-index:4;}
+.sparkle.s1{top:8px;right:12%;animation-delay:0s;}.sparkle.s2{bottom:14px;right:24%;animation-delay:0.7s;}.sparkle.s3{top:14px;left:30%;animation-delay:1.3s;}
+@keyframes sparkle{0%{opacity:0;transform:scale(0.4) rotate(0);}30%{opacity:1;transform:scale(1.2) rotate(120deg);}70%{opacity:1;transform:scale(1) rotate(240deg);}100%{opacity:0;transform:scale(0.4) rotate(360deg);}}
 .player-card.rank-2{background:linear-gradient(135deg,rgba(0,212,255,0.09),rgba(0,100,180,0.05));border:1px solid rgba(0,212,255,0.25);}
 .player-card.rank-3{background:linear-gradient(135deg,rgba(255,107,0,0.09),rgba(180,50,0,0.05));border:1px solid rgba(255,107,0,0.25);}
 .player-card.rank-other{background:linear-gradient(135deg,var(--bg1),var(--bg2));border:1px solid var(--bdr);}
-.player-card.rank-1::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,215,0,0.06) 50%,transparent 60%);animation:shimmer 3s ease-in-out infinite;}
-@keyframes shimmer{0%{transform:translateX(-100%);}100%{transform:translateX(200%);}}
-.rank-num{font-family:var(--fd);font-size:clamp(24px,4vw,36px);text-align:center;line-height:1;}
-.rank-1 .rank-num{color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,0.5);}.rank-2 .rank-num{color:var(--blue);}.rank-3 .rank-num{color:var(--orange);}.rank-other .rank-num{color:var(--t3);}
-.avatar{width:52px;height:52px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;}
+.rank-num{font-family:var(--fd);font-size:clamp(24px,4vw,36px);text-align:center;line-height:1;position:relative;z-index:1;}
+.rank-1 .rank-num{color:var(--gold);}.rank-2 .rank-num{color:var(--blue);}.rank-3 .rank-num{color:var(--orange);}.rank-other .rank-num{color:var(--t3);}
+.avatar{width:52px;height:52px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;}
 .avatar::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:2px solid transparent;background:linear-gradient(var(--bg0),var(--bg0)) padding-box,linear-gradient(135deg,var(--av-c1,#00d4ff),var(--av-c2,#005580)) border-box;}
-.player-info{min-width:0;}.player-name{font-size:clamp(15px,2.5vw,19px);font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.player-info{min-width:0;position:relative;z-index:1;}.player-name{font-size:clamp(15px,2.5vw,19px);font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .player-meta{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;}
 .streak-badge{font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:20px;letter-spacing:0.5px;}
 .streak-hot{background:rgba(57,255,20,0.12);color:var(--green);border:1px solid rgba(57,255,20,0.25);}
 .streak-ok{background:rgba(0,212,255,0.08);color:var(--blue);border:1px solid rgba(0,212,255,0.2);}
 .streak-cold{background:rgba(255,255,255,0.04);color:var(--t3);border:1px solid rgba(255,255,255,0.08);}
+.adj-badge{font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,140,0,0.1);color:var(--gold2);border:1px solid rgba(255,140,0,0.25);}
+.adj-badge.neg{background:rgba(255,60,60,0.08);color:#ff7777;border-color:rgba(255,60,60,0.25);}
 .correct-count{font-family:var(--fm);font-size:10px;color:var(--t3);}
-.score-right{text-align:right;}
+.score-right{text-align:right;position:relative;z-index:1;}
 .score-pts{font-family:var(--fd);font-size:clamp(32px,5vw,48px);line-height:1;}
-.rank-1 .score-pts{color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,0.4);}.rank-2 .score-pts{color:var(--blue);}.rank-3 .score-pts{color:var(--orange);}.rank-other .score-pts{color:var(--t2);}
+.rank-1 .score-pts{color:var(--gold);}.rank-2 .score-pts{color:var(--blue);}.rank-3 .score-pts{color:var(--orange);}.rank-other .score-pts{color:var(--t2);}
 .score-lbl{font-family:var(--fm);font-size:10px;color:var(--t3);letter-spacing:1.5px;margin-top:2px;}
 .today-card{background:linear-gradient(135deg,rgba(255,215,0,0.06),rgba(0,212,255,0.04));border:1px solid rgba(255,215,0,0.25);border-radius:20px;padding:28px 24px;position:relative;overflow:hidden;}
 .today-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--blue),var(--gold));background-size:200% 100%;animation:gradSlide 3s linear infinite;}
@@ -165,11 +177,37 @@ tbody td{padding:10px 8px;text-align:center;color:var(--t2);vertical-align:middl
 .debug-log .d-ok{color:var(--green);}.debug-log .d-err{color:#ff7777;}.debug-log .d-info{color:var(--blue);}.debug-log .d-warn{color:var(--gold);}
 .toast{position:fixed;bottom:28px;right:28px;z-index:999;background:var(--bg2);border-radius:12px;padding:14px 22px;font-family:var(--fm);font-size:13px;opacity:0;transform:translateY(14px);transition:all 0.3s;pointer-events:none;border:1px solid var(--green);color:var(--green);max-width:340px;}.toast.show{opacity:1;transform:translateY(0);}
 .footer{text-align:center;padding:32px 20px 24px;font-family:var(--fm);font-size:11px;color:var(--t3);letter-spacing:1px;border-top:1px solid var(--bdr);position:relative;z-index:1;}.footer strong{color:var(--gold);}
-/* Auto-result status box */
 .auto-result-box{background:rgba(0,212,255,0.05);border:1px solid var(--bdr);border-radius:12px;padding:14px 16px;margin-top:16px;font-family:var(--fm);font-size:11px;color:var(--t3);}
 .auto-result-box .arb-title{color:var(--blue);font-size:10px;letter-spacing:1.5px;margin-bottom:6px;}
 .auto-result-box .arb-msg{line-height:1.6;}
-@media(max-width:600px){.player-card{grid-template-columns:40px 44px 1fr auto;gap:10px;padding:12px 14px;}.score-pts{font-size:28px;}.img-divider{height:130px;}.match-tile{flex-direction:column;align-items:flex-start;}.vote-grid{grid-template-columns:1fr;}}
+/* === BONUS TAB === */
+.bonus-info{background:rgba(255,140,0,0.06);border:1px solid rgba(255,140,0,0.25);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-family:var(--fm);font-size:12px;color:var(--gold2);line-height:1.7;}
+.bonus-info strong{color:#FFA500;}
+.adj-grid{display:grid;grid-template-columns:1fr;gap:8px;margin:14px 0;}
+.adj-row{display:flex;align-items:center;gap:8px;background:var(--bg0);border:1px solid var(--bdr);border-radius:10px;padding:10px 12px;flex-wrap:wrap;}
+.adj-ini{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:12px;flex-shrink:0;}
+.adj-name{min-width:90px;font-size:12px;font-weight:700;}
+.adj-input{width:80px;background:var(--bg1);border:1px solid var(--bdr);border-radius:8px;color:var(--t1);font-family:var(--fm);font-size:13px;padding:6px 10px;text-align:center;outline:none;}
+.adj-input:focus{border-color:var(--gold);}
+.adj-quick{display:flex;gap:4px;flex-wrap:wrap;flex:1;justify-content:flex-end;}
+.adj-quick button{padding:6px 10px;border-radius:6px;border:1px solid var(--bdr);background:transparent;cursor:pointer;font-family:var(--fm);font-size:11px;font-weight:600;transition:all 0.15s;}
+.adj-quick button:active{transform:scale(0.95);}
+.adj-quick .pos{color:var(--green);border-color:rgba(57,255,20,0.3);}
+.adj-quick .pos:hover{background:rgba(57,255,20,0.15);}
+.adj-quick .neg{color:#ff7777;border-color:rgba(255,60,60,0.3);}
+.adj-quick .neg:hover{background:rgba(255,60,60,0.15);}
+.adj-quick .apply{color:var(--blue);border-color:var(--bdr2);background:rgba(0,212,255,0.05);}
+.adj-quick .apply:hover{background:rgba(0,212,255,0.18);}
+.adj-log{margin-top:8px;max-height:320px;overflow-y:auto;border:1px solid var(--bdr);border-radius:10px;}
+.adj-log-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(0,212,255,0.05);font-family:var(--fm);font-size:11px;}
+.adj-log-row:last-child{border-bottom:none;}
+.adj-log-row .alr-name{font-weight:700;min-width:70px;}
+.adj-log-row .alr-pts{font-weight:700;font-size:13px;min-width:50px;text-align:right;}
+.adj-log-row .alr-pts.pos{color:var(--green);}
+.adj-log-row .alr-pts.neg{color:#ff7777;}
+.adj-log-row .alr-reason{flex:1;color:var(--t2);font-style:italic;min-width:120px;}
+.adj-log-row .alr-date{color:var(--t3);font-size:10px;}
+@media(max-width:600px){.player-card{grid-template-columns:40px 44px 1fr auto;gap:10px;padding:12px 14px;}.score-pts{font-size:28px;}.img-divider{height:130px;}.match-tile{flex-direction:column;align-items:flex-start;}.vote-grid{grid-template-columns:1fr;}.adj-row{flex-direction:row;}.adj-quick{justify-content:flex-start;}}
 </style>
 </head>
 <body>
@@ -221,15 +259,12 @@ tbody td{padding:10px 8px;text-align:center;color:var(--t2);vertical-align:middl
     <button class="btn-sync" onclick="pullData()">↻ Refresh</button>
   </div>
 
-  <!-- TODAY -->
   <div class="sec-header"><div class="sec-line"></div><div class="sec-icon">🎯</div><div class="sec-title">TODAY'S PREDICTION</div><div class="sec-line right"></div></div>
   <div id="todaySection"></div>
 
-  <!-- STATS -->
   <div class="sec-header"><div class="sec-line"></div><div class="sec-icon">📊</div><div class="sec-title">SEASON STATS</div><div class="sec-line right"></div></div>
   <div class="stats-bar" id="statsBar"></div>
 
-  <!-- LEADERBOARD -->
   <div class="sec-header"><div class="sec-line"></div><div class="sec-icon">🏅</div><div class="sec-title">LEADERBOARD</div><div class="sec-line right"></div></div>
   <div class="lb-wrap" id="leaderboard"></div>
 
@@ -238,11 +273,9 @@ tbody td{padding:10px 8px;text-align:center;color:var(--t2);vertical-align:middl
     <div class="img-divider-overlay"><div class="img-divider-text">MAY THE BEST PREDICTOR WIN<span>IPL 2026 SEASON</span></div></div>
   </div>
 
-  <!-- MATCH LOG -->
   <div class="sec-header"><div class="sec-line"></div><div class="sec-icon">📋</div><div class="sec-title">MATCH LOG</div><div class="sec-line right"></div></div>
   <div class="log-wrap"><div id="matchLog"></div></div>
 
-  <!-- UPCOMING -->
   <div class="sec-header"><div class="sec-line"></div><div class="sec-icon">🗓️</div><div class="sec-title">UPCOMING MATCHES</div><div class="sec-line right"></div></div>
   <div id="upcomingMatches"></div>
 
@@ -264,11 +297,25 @@ tbody td{padding:10px 8px;text-align:center;color:var(--t2);vertical-align:middl
     </div>
     <div class="admin-tabs">
       <button class="tab-btn active" onclick="switchTab('tab-today',this)">🎯 Today's Match</button>
+      <button class="tab-btn" onclick="switchTab('tab-bonus',this)">⚡ Bonus Points</button>
       <button class="tab-btn" onclick="switchTab('tab-add',this)">➕ Manual Add</button>
       <button class="tab-btn" onclick="switchTab('tab-setup',this)">⚙️ Setup</button>
       <button class="tab-btn" onclick="switchTab('tab-danger',this)">⚠️ Danger</button>
     </div>
     <div class="tab-content active" id="tab-today"><div id="adminTodayControls"></div></div>
+    <div class="tab-content" id="tab-bonus">
+      <div class="bonus-info">
+        ⚡ <strong>BONUS POINTS</strong> — Award or deduct points for <strong>Double Dip</strong>, bonus questions, side bets, or any other reason. These add directly to the player's leaderboard total.<br>
+        Example: Double Dip rule → <strong>+60</strong> if correct, <strong>−50</strong> if wrong. Twice per tournament per player (track manually).
+      </div>
+      <div class="fg" style="margin-bottom:14px;">
+        <label>REASON / NOTE (applies to next click)</label>
+        <input type="text" id="bonusReason" placeholder="e.g. Double Dip win - MI vs CSK">
+      </div>
+      <div class="adj-grid" id="bonusGrid"></div>
+      <div style="font-family:var(--fm);font-size:11px;color:var(--t3);letter-spacing:1.5px;margin:18px 0 8px;">RECENT ADJUSTMENTS (newest first)</div>
+      <div class="adj-log" id="adjLog"></div>
+    </div>
     <div class="tab-content" id="tab-add">
       <p style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-bottom:16px;">Manual add for past matches.</p>
       <div class="form-row">
@@ -312,7 +359,7 @@ tbody td{padding:10px 8px;text-align:center;color:var(--t2);vertical-align:middl
 //  CONFIG
 // ══════════════════════════════════════════════════════════
 const SCRIPT_URL_KEY = 'pft_script_url_v1';
-const LS_CACHE       = 'pft_cache_v5';
+const LS_CACHE       = 'pft_cache_v6';
 const ADMIN_PASS     = 'IPL26';
 const PTS            = 70;
 const CRIC_API_KEY   = '50530cc0-8f6e-4bcb-a51d-318b4ff77b88';
@@ -339,9 +386,6 @@ const PLAYERS = [
   {name:'Ravi Srivastava',    ini:'RS', c1:'#00ffcc', c2:'#006650', bg:'rgba(0,255,204,0.12)'}
 ];
 
-// ══════════════════════════════════════════════════════════
-//  SEED DATA
-// ══════════════════════════════════════════════════════════
 const SEED = [
   {date:'29 Mar', teams:'MI vs KKR',   winner:'MI',   correct:['Ashutosh Mathur','Mohd. Jameel','Saurabh Singh','Naveen Srivastava','Ravi Srivastava']},
   {date:'30 Mar', teams:'RR vs CSK',   winner:'RR',   correct:['Mohd. Jameel','Alok Dohare','Naveen Srivastava']},
@@ -356,6 +400,7 @@ const SEED = [
 // ══════════════════════════════════════════════════════════
 let matches        = [];
 let todayMatch     = null;
+let adjustments    = [];   // [{name, points, reason, date, ts}]
 let predState      = {};
 let adminUnlocked  = false;
 let liveSchedule   = [];
@@ -376,10 +421,8 @@ function dlog(m, t) {
   el.innerHTML += `<span class="${c}">[${new Date().toLocaleTimeString()}] ${m}</span><br>`;
   el.scrollTop = el.scrollHeight;
 }
-
 function cacheSet(d) { try { localStorage.setItem(LS_CACHE, JSON.stringify(d)); } catch(e) {} }
 function cacheGet()  { try { const s = localStorage.getItem(LS_CACHE); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
-
 function setSyncState(s) {
   ['syncDot','syncDot2'].forEach(id => {
     const el = document.getElementById(id);
@@ -392,7 +435,6 @@ function setSyncMsg(m) {
   if (a) a.textContent = m;
   if (b) b.textContent = m;
 }
-
 function toast(m, e) {
   const t = document.getElementById('toast');
   t.textContent = m;
@@ -401,42 +443,25 @@ function toast(m, e) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3500);
 }
-
 function istParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).formatToParts(date).reduce((acc, part) => {
-    acc[part.type] = part.value;
-    return acc;
-  }, {});
+    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(date).reduce((acc, part) => { acc[part.type] = part.value; return acc; }, {});
   return {
     key: `${parts.year}-${parts.month}-${parts.day}`,
-    display: new Intl.DateTimeFormat('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: 'numeric',
-      month: 'short'
-    }).format(date),
+    display: new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' }).format(date),
     minutes: Number(parts.hour) * 60 + Number(parts.minute)
   };
 }
-
-function slotMinutes(slot) {
-  return slot.hour * 60 + slot.minute;
-}
-
+function slotMinutes(slot) { return slot.hour * 60 + slot.minute; }
 function activeAutoSlots() {
   const now = istParts();
   return AUTO_SLOTS.filter(slot => now.minutes >= slotMinutes(slot));
 }
 
 // ══════════════════════════════════════════════════════════
-//  DATABASE (Google Apps Script)
+//  DATABASE
 // ══════════════════════════════════════════════════════════
 async function pullData() {
   setSyncState('saving'); setSyncMsg('Syncing...');
@@ -445,18 +470,18 @@ async function pullData() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = JSON.parse(await res.text());
     if (data.error) throw new Error(data.error);
-
     if (Array.isArray(data.matches) && data.matches.length > 0) {
       matches = data.matches;
     } else {
       const c = cacheGet();
       matches = c?.matches?.length ? c.matches : JSON.parse(JSON.stringify(SEED));
-      dlog('Remote database returned no matches; showing local fallback without overwriting remote data.', 'warn');
+      dlog('Remote returned no matches; using local fallback.', 'warn');
     }
-
     if (data.hasOwnProperty('todayMatch')) todayMatch = data.todayMatch || null;
-    cacheSet({matches, todayMatch});
+    if (Array.isArray(data.adjustments)) adjustments = data.adjustments;
+    cacheSet({matches, todayMatch, adjustments});
     renderAll(); renderToday();
+    if (adminUnlocked) renderAdjLog();
     remoteDataLoaded = true;
     setSyncState('live'); setSyncMsg('Live · ' + new Date().toLocaleTimeString());
   } catch(e) {
@@ -464,7 +489,9 @@ async function pullData() {
     const c = cacheGet();
     matches    = c?.matches    || JSON.parse(JSON.stringify(SEED));
     todayMatch = c?.todayMatch || null;
+    adjustments = Array.isArray(c?.adjustments) ? c.adjustments : [];
     renderAll(); renderToday();
+    if (adminUnlocked) renderAdjLog();
     remoteDataLoaded = false;
     setSyncState('error'); setSyncMsg('⚠ ' + e.message);
   }
@@ -475,12 +502,12 @@ async function pushData() {
   try {
     const res = await fetch(SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify({action:'set', matches, todayMatch})
+      body: JSON.stringify({action:'set', matches, todayMatch, adjustments})
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const d = JSON.parse(await res.text());
     if (d.error) throw new Error(d.error);
-    cacheSet({matches, todayMatch});
+    cacheSet({matches, todayMatch, adjustments});
     setSyncState('live'); setSyncMsg('Saved · ' + new Date().toLocaleTimeString());
     return true;
   } catch(e) {
@@ -492,41 +519,24 @@ async function pushData() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  CRICAPI — TEAM ALIAS HELPERS
+//  CRICAPI HELPERS
 // ══════════════════════════════════════════════════════════
-
-/**
- * Returns all known name variants for an IPL team abbreviation.
- * Used for matching team names that appear in CricAPI responses.
- */
 function teamAliases(team) {
   const map = {
-    MI:   ['MI', 'MUMBAI INDIANS'],
-    CSK:  ['CSK', 'CHENNAI SUPER KINGS'],
-    RCB:  ['RCB', 'ROYAL CHALLENGERS BENGALURU', 'ROYAL CHALLENGERS BANGALORE'],
-    KKR:  ['KKR', 'KOLKATA KNIGHT RIDERS'],
-    DC:   ['DC', 'DELHI CAPITALS'],
-    RR:   ['RR', 'RAJASTHAN ROYALS'],
-    PBKS: ['PBKS', 'PUNJAB KINGS'],
-    SRH:  ['SRH', 'SUNRISERS HYDERABAD'],
-    LSG:  ['LSG', 'LUCKNOW SUPER GIANTS'],
-    GT:   ['GT', 'GUJARAT TITANS']
+    MI:['MI','MUMBAI INDIANS'], CSK:['CSK','CHENNAI SUPER KINGS'],
+    RCB:['RCB','ROYAL CHALLENGERS BENGALURU','ROYAL CHALLENGERS BANGALORE'],
+    KKR:['KKR','KOLKATA KNIGHT RIDERS'], DC:['DC','DELHI CAPITALS'],
+    RR:['RR','RAJASTHAN ROYALS'], PBKS:['PBKS','PUNJAB KINGS'],
+    SRH:['SRH','SUNRISERS HYDERABAD'], LSG:['LSG','LUCKNOW SUPER GIANTS'],
+    GT:['GT','GUJARAT TITANS']
   };
   const key = (team || '').toUpperCase().trim();
   return map[key] || [key];
 }
-
-/**
- * Returns true if haystack string contains any known alias for team.
- */
 function hasTeam(haystack, team) {
   const hay = (haystack || '').toUpperCase();
   return teamAliases(team).some(alias => hay.includes(alias));
 }
-
-/**
- * Builds a single searchable text blob from all string fields in a CricAPI match object.
- */
 function apiMatchText(m) {
   const parts = [m.name, m.series, m.t1, m.t2, m.t1s, m.t2s, m.status, m.venue];
   if (Array.isArray(m.teams))    parts.push(...m.teams);
@@ -534,240 +544,104 @@ function apiMatchText(m) {
   return parts.filter(Boolean).join(' ');
 }
 
-// ══════════════════════════════════════════════════════════
-//  CRICAPI — RESULT DETECTION  ← FIXED
-// ══════════════════════════════════════════════════════════
-
-/**
- * Fetches currentMatches from CricAPI and tries to determine the result
- * of todayMatch.
- *
- * Returns an object:
- *   { state: 'not_found' }
- *   { state: 'in_progress', status }
- *   { state: 'winner_unknown', status }
- *   { state: 'ended', winner, status }
- *
- * KEY FIXES vs original:
- * 1. Only uses currentMatches (not cricScore) — better result retention.
- * 2. Checks matchEnded === true BEFORE any winner parsing.
- *    This prevents toss messages / bat-first announcements from
- *    being misread as a result.
- * 3. Parses winner ONLY from dedicated winner fields, NOT from the
- *    full text blob (which always contains both team names).
- * 4. Uses a strict regex on status as a last resort.
- */
 async function getCricApiMatchResult() {
   if (!todayMatch) throw new Error('No active match');
-
   dlog('Querying CricAPI currentMatches...', 'info');
-
-  // ── Fetch ──────────────────────────────────────────────
-  const res = await fetch(
-    `https://api.cricapi.com/v1/currentMatches?apikey=${CRIC_API_KEY}&offset=0`
-  );
+  const res = await fetch(`https://api.cricapi.com/v1/currentMatches?apikey=${CRIC_API_KEY}&offset=0`);
   if (!res.ok) throw new Error('CricAPI HTTP ' + res.status);
   const data = await res.json();
-
   if (data.status !== 'success' || !Array.isArray(data.data)) {
-    throw new Error(data.reason || 'CricAPI returned non-success: ' + data.status);
+    throw new Error(data.reason || 'CricAPI non-success: ' + data.status);
   }
-
-  dlog(`CricAPI returned ${data.data.length} matches`, 'info');
-
   const tm = todayMatch;
-
-  // ── Find the specific match (BOTH teams must appear) ───
   const found = data.data.find(m => {
     const text = apiMatchText(m);
-    return (
-      /Indian Premier League|IPL/i.test(text) &&
-      hasTeam(text, tm.teamA) &&
-      hasTeam(text, tm.teamB)
-    );
+    return /Indian Premier League|IPL/i.test(text) && hasTeam(text, tm.teamA) && hasTeam(text, tm.teamB);
   });
-
-  if (!found) {
-    // Log what IPL matches were seen for debug
-    const iplSeen = data.data
-      .filter(m => /IPL/i.test(apiMatchText(m)))
-      .map(m => m.name || '?')
-      .slice(0, 6)
-      .join(' | ');
-    dlog(`Match not found. IPL matches in feed: ${iplSeen || 'none'}`, 'warn');
-    return { state: 'not_found' };
-  }
-
-  dlog(
-    `Found: "${found.name}" | matchStarted=${found.matchStarted}` +
-    ` | matchEnded=${found.matchEnded} | status="${found.status}"`,
-    'info'
-  );
-
-  // ── CRITICAL GATE: only proceed if match is definitively over ──
-  // matchEnded is a boolean flag set by CricAPI when the match concludes.
-  // Checking it here prevents toss/live-score updates from being
-  // misinterpreted as a result.
-  if (!found.matchEnded) {
-    dlog('matchEnded=false → match still in progress', 'info');
-    return { state: 'in_progress', status: found.status };
-  }
-
-  // ── Parse winner ONLY from dedicated winner fields ──────
-  // Never from the full text blob — it always contains both team names.
+  if (!found) return { state: 'not_found' };
+  if (!found.matchEnded) return { state: 'in_progress', status: found.status };
   const winnerRaw = ((found.winner || found.matchWinner || '')).toUpperCase().trim();
-  dlog(`Winner field raw: "${winnerRaw}"`, 'info');
-
   if (winnerRaw) {
-    if (hasTeam(winnerRaw, tm.teamA)) {
-      dlog(`Winner parsed from field: ${tm.teamA}`, 'ok');
-      return { state: 'ended', winner: tm.teamA, status: found.status };
-    }
-    if (hasTeam(winnerRaw, tm.teamB)) {
-      dlog(`Winner parsed from field: ${tm.teamB}`, 'ok');
-      return { state: 'ended', winner: tm.teamB, status: found.status };
-    }
+    if (hasTeam(winnerRaw, tm.teamA)) return { state: 'ended', winner: tm.teamA, status: found.status };
+    if (hasTeam(winnerRaw, tm.teamB)) return { state: 'ended', winner: tm.teamB, status: found.status };
   }
-
-  // ── Last resort: strict regex on status field only ──────
-  // Pattern: "Mumbai Indians won by 5 wickets" — anchored at START.
-  // This avoids matching team names that appear mid-sentence
-  // (e.g. "KKR chose to bat against MI").
   const statusUp = (found.status || '').toUpperCase();
-  dlog(`Trying regex on status: "${statusUp}"`, 'info');
-
-  // Match "<anything> WON" at the start of the string
   const wonMatch = statusUp.match(/^(.+?)\s+WON\b/);
   if (wonMatch) {
     const winnerText = wonMatch[1].trim();
-    dlog(`Regex captured: "${winnerText}"`, 'info');
-    if (hasTeam(winnerText, tm.teamA)) {
-      dlog(`Winner via regex: ${tm.teamA}`, 'ok');
-      return { state: 'ended', winner: tm.teamA, status: found.status };
-    }
-    if (hasTeam(winnerText, tm.teamB)) {
-      dlog(`Winner via regex: ${tm.teamB}`, 'ok');
-      return { state: 'ended', winner: tm.teamB, status: found.status };
-    }
-    dlog(`Regex match "${winnerText}" didn't map to either team`, 'warn');
+    if (hasTeam(winnerText, tm.teamA)) return { state: 'ended', winner: tm.teamA, status: found.status };
+    if (hasTeam(winnerText, tm.teamB)) return { state: 'ended', winner: tm.teamB, status: found.status };
   }
-
-  // matchEnded=true but we couldn't parse the winner
-  dlog(`matchEnded=true but winner unknown. status="${found.status}"`, 'warn');
   return { state: 'winner_unknown', status: found.status };
 }
 
-// ══════════════════════════════════════════════════════════
-//  FETCH RESULT (admin button + auto)
-// ══════════════════════════════════════════════════════════
 async function fetchResult(opts = {}) {
-  const el     = document.getElementById('fetchResultStatus');
-  const btn    = document.getElementById('fetchResultBtn');
-  const silent = !!opts.silent;
-
+  const el  = document.getElementById('fetchResultStatus');
+  const btn = document.getElementById('fetchResultBtn');
   if (!todayMatch) return false;
-
   if (el) el.textContent = '🔄 Querying CricAPI...';
   if (btn) btn.disabled = true;
-
   try {
     const result = await getCricApiMatchResult();
-
     switch (result.state) {
-
       case 'not_found':
         autoResultMsg = 'Match not found in current CricAPI feed.';
-        if (el) el.innerHTML = '<span style="color:var(--gold)">⚠ Match not in API feed yet. Try again after the match ends, or use manual buttons.</span>';
-        if (btn) btn.disabled = false;
-        return false;
-
+        if (el) el.innerHTML = '<span style="color:var(--gold)">⚠ Match not in API feed yet.</span>';
+        if (btn) btn.disabled = false; return false;
       case 'in_progress':
-        autoResultMsg = `Match still live. API status: "${result.status}"`;
-        if (el) el.innerHTML = `<span style="color:var(--blue)">⏳ Match in progress — "${result.status}". Auto-checking every 60s.</span>`;
-        if (btn) btn.disabled = false;
-        return false;
-
+        autoResultMsg = `Live: "${result.status}"`;
+        if (el) el.innerHTML = `<span style="color:var(--blue)">⏳ "${result.status}". Auto-checking.</span>`;
+        if (btn) btn.disabled = false; return false;
       case 'winner_unknown':
-        autoResultMsg = `matchEnded=true but couldn't parse winner. Status: "${result.status}"`;
-        if (el) el.innerHTML = `<span style="color:var(--gold)">⚠ Match over but winner unclear from API.<br>Status: "${result.status}"<br>Use manual buttons below.</span>`;
-        if (btn) btn.disabled = false;
-        return false;
-
+        autoResultMsg = `matchEnded but winner unclear: "${result.status}"`;
+        if (el) el.innerHTML = `<span style="color:var(--gold)">⚠ Match over but winner unclear.<br>"${result.status}"<br>Use manual buttons.</span>`;
+        if (btn) btn.disabled = false; return false;
       case 'ended':
         autoResultMsg = `Auto-settled: ${result.winner} won.`;
-        if (el) el.innerHTML = `<span style="color:var(--green)">✅ ${result.winner} won! Updating scores...</span>`;
+        if (el) el.innerHTML = `<span style="color:var(--green)">✅ ${result.winner} won! Settling...</span>`;
         await settleMatch(result.winner);
-        toast(`🏆 ${result.winner} wins! Scores updated!`);
+        toast(`🏆 ${result.winner} wins!`);
         return true;
-
       default:
-        if (btn) btn.disabled = false;
-        return false;
+        if (btn) btn.disabled = false; return false;
     }
-
   } catch(e) {
     autoResultMsg = 'Error: ' + e.message;
-    dlog('fetchResult error: ' + e.message, 'err');
-    if (el) el.innerHTML = `<span style="color:#ff7777">❌ ${e.message}. Use manual buttons below.</span>`;
-    if (btn) btn.disabled = false;
-    return false;
+    dlog('fetchResult: ' + e.message, 'err');
+    if (el) el.innerHTML = `<span style="color:#ff7777">❌ ${e.message}</span>`;
+    if (btn) btn.disabled = false; return false;
   }
 }
 
-// Auto-called silently when any open browser sees a revealed match.
 async function autoFetchResult(force = false) {
   if (autoResultBusy) return;
   if (!todayMatch || todayMatch.status !== 'revealed') return;
-
   const now = Date.now();
   if (!force && (now - lastAutoResultCheck) < AUTO_RESULT_POLL_MS) return;
-
   autoResultBusy = true;
   lastAutoResultCheck = now;
-
   try {
-    dlog('Auto-checking result...', 'info');
     const el = document.getElementById('fetchResultStatus');
     if (el) el.textContent = '🔄 Auto-checking result...';
     await fetchResult({ silent: true });
-  } finally {
-    autoResultBusy = false;
-  }
+  } finally { autoResultBusy = false; }
 }
 
-// ══════════════════════════════════════════════════════════
-//  SETTLE MATCH (shared logic for auto + manual)
-// ══════════════════════════════════════════════════════════
 async function settleMatch(winner) {
   const settledMatch = { ...todayMatch, winner, status: 'settled', revealed: true };
   const votes   = settledMatch.votes || {};
   const correct = PLAYERS.filter(p => votes[p.name] === winner).map(p => p.name);
-
-  // Pull latest before writing to avoid stale overwrites
   await pullData();
   todayMatch = settledMatch;
-
-  // Add to match log only if not already there
-  const exists = matches.some(
-    m => m.date === settledMatch.date && m.teams === settledMatch.teams
-  );
+  const exists = matches.some(m => m.date === settledMatch.date && m.teams === settledMatch.teams);
   if (!exists) {
-    matches.push({
-      date:    settledMatch.date,
-      teams:   settledMatch.teams,
-      winner,
-      correct
-    });
+    matches.push({ date: settledMatch.date, teams: settledMatch.teams, winner, correct });
   }
-
   await pushData();
   renderAll();
   renderToday();
 }
 
-// ══════════════════════════════════════════════════════════
-//  MANUAL WINNER
-// ══════════════════════════════════════════════════════════
 async function manualWinner(team) {
   if (!confirm(`Declare ${team} as the winner?`)) return;
   await settleMatch(team);
@@ -775,7 +649,7 @@ async function manualWinner(team) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  TODAY — PUBLIC RENDER
+//  TODAY — RENDER
 // ══════════════════════════════════════════════════════════
 function renderToday() {
   const el = document.getElementById('todaySection');
@@ -784,7 +658,6 @@ function renderToday() {
     if (adminUnlocked) renderAdminToday();
     return;
   }
-
   const tm = todayMatch;
   const isRevealed = tm.status === 'revealed' || tm.status === 'settled';
   const isSettled  = tm.status === 'settled';
@@ -816,13 +689,9 @@ function renderToday() {
   const tally = isRevealed
     ? `<div class="vote-tally">
         <span class="tally-label" style="color:var(--blue)">${tm.teamA} (${teamACnt})</span>
-        <div class="tally-bar">
-          <div class="tally-a" style="width:${aPct}%">${aPct}%</div>
-          <div class="tally-b">${100 - aPct}%</div>
-        </div>
+        <div class="tally-bar"><div class="tally-a" style="width:${aPct}%">${aPct}%</div><div class="tally-b">${100 - aPct}%</div></div>
         <span class="tally-label" style="color:var(--orange)">${tm.teamB} (${teamBCnt})</span>
-      </div>`
-    : '';
+      </div>` : '';
 
   let wb = '';
   if (isSettled && tm.winner) {
@@ -850,21 +719,13 @@ function renderToday() {
   if (adminUnlocked) renderAdminToday();
 }
 
-// ══════════════════════════════════════════════════════════
-//  TODAY — ADMIN CONTROLS
-// ══════════════════════════════════════════════════════════
 function renderAdminToday() {
   const el = document.getElementById('adminTodayControls');
   if (!el) return;
-
-  // No match or settled → show match picker
   if (!todayMatch || todayMatch.status === 'settled') {
     const opts = liveSchedule.length
-      ? liveSchedule.map((s, i) =>
-          `<option value="${i}">${s.date} — ${s.teams}${s.venue ? ' · ' + s.venue : ''}</option>`
-        ).join('')
+      ? liveSchedule.map((s, i) => `<option value="${i}">${s.date} — ${s.teams}${s.venue ? ' · ' + s.venue : ''}</option>`).join('')
       : '<option value="" disabled>Loading schedule from CricAPI...</option>';
-
     let banner = '';
     if (todayMatch?.status === 'settled') {
       const v  = todayMatch.votes || {};
@@ -874,14 +735,12 @@ function renderAdminToday() {
         <div style="font-family:var(--fm);font-size:12px;color:var(--green);margin-top:4px;">🏆 ${todayMatch.winner} won · ${cn} correct · Scores updated</div>
       </div>`;
     }
-
     el.innerHTML = `${banner}
       <p style="font-family:var(--fm);font-size:13px;color:var(--t2);margin-bottom:16px;">🎯 Pick today's match to open voting:</p>
       <div class="fg" style="margin-bottom:14px;">
         <label>SELECT MATCH</label>
         <select id="pickMatch">
-          <option value="">— Choose —</option>
-          ${opts}
+          <option value="">— Choose —</option>${opts}
           <option value="custom">✏️ Custom (enter manually)</option>
         </select>
       </div>
@@ -891,10 +750,7 @@ function renderAdminToday() {
           <div class="fg"><label>TEAM B (short)</label><input type="text" id="cmTeamB" placeholder="PBKS"></div>
         </div>
       </div>
-      <div class="btn-row" style="margin-top:14px;">
-        <button class="btn-green" onclick="createTodayMatch()">🎯 OPEN VOTING</button>
-      </div>`;
-
+      <div class="btn-row" style="margin-top:14px;"><button class="btn-green" onclick="createTodayMatch()">🎯 OPEN VOTING</button></div>`;
     setTimeout(() => {
       const s = document.getElementById('pickMatch');
       if (s) s.onchange = () => {
@@ -905,11 +761,9 @@ function renderAdminToday() {
     return;
   }
 
-  // Active match → quick vote grid + result controls
   const tm    = todayMatch;
   const votes = tm.votes || {};
   const vc    = Object.values(votes).filter(v => v).length;
-
   const voteRows = PLAYERS.map(p => {
     const cur   = votes[p.name] || '';
     const voted = !!cur;
@@ -920,42 +774,28 @@ function renderAdminToday() {
       <button class="qv-btn b${cur === tm.teamB ? ' sel' : ''}" onclick="qVote('${p.name}','${tm.teamB}')">${tm.teamB}</button>
     </div>`;
   }).join('');
-
   const allVotedMsg = (vc === PLAYERS.length && tm.status === 'voting')
-    ? `<div style="font-family:var(--fm);font-size:12px;color:var(--green);margin-top:12px;text-align:center;">✅ All ${PLAYERS.length} votes in! Auto-revealing...</div>`
-    : '';
-
-  // Result controls shown only after votes are revealed
+    ? `<div style="font-family:var(--fm);font-size:12px;color:var(--green);margin-top:12px;text-align:center;">✅ All ${PLAYERS.length} votes in! Auto-revealing...</div>` : '';
   let resultSection = '';
   if (tm.status === 'revealed') {
     resultSection = `
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--bdr);">
         <div style="font-family:var(--fm);font-size:12px;color:var(--t2);margin-bottom:10px;">🏆 Match over? Fetch or declare the result:</div>
-        <div class="btn-row">
-          <button class="btn-save" onclick="fetchResult()" id="fetchResultBtn">🔄 Auto-Fetch Result (CricAPI)</button>
-        </div>
-        <div id="fetchResultStatus" style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:10px;line-height:1.7;">
-          ${autoResultMsg || 'Click above to query CricAPI for the match result.'}
-        </div>
+        <div class="btn-row"><button class="btn-save" onclick="fetchResult()" id="fetchResultBtn">🔄 Auto-Fetch Result (CricAPI)</button></div>
+        <div id="fetchResultStatus" style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:10px;line-height:1.7;">${autoResultMsg || 'Click above to query CricAPI for the match result.'}</div>
         <div style="font-family:var(--fm);font-size:11px;color:var(--t3);margin-top:16px;margin-bottom:8px;">Or declare winner manually:</div>
         <div class="btn-row">
-          <button class="btn-save"   onclick="manualWinner('${tm.teamA}')">🏆 ${tm.teamA} WON</button>
+          <button class="btn-save" onclick="manualWinner('${tm.teamA}')">🏆 ${tm.teamA} WON</button>
           <button class="btn-orange" onclick="manualWinner('${tm.teamB}')">🏆 ${tm.teamB} WON</button>
         </div>
       </div>`;
   }
-
   el.innerHTML = `
     <div style="font-family:var(--fd);font-size:24px;color:var(--gold);letter-spacing:2px;">${tm.teamA} vs ${tm.teamB}</div>
-    <div class="vote-counter">${tm.date} ·
-      <span class="vc-num">${vc}/${PLAYERS.length}</span> voted ·
-      Status: <strong style="color:var(--blue)">${tm.status.toUpperCase()}</strong>
-    </div>
+    <div class="vote-counter">${tm.date} · <span class="vc-num">${vc}/${PLAYERS.length}</span> voted · Status: <strong style="color:var(--blue)">${tm.status.toUpperCase()}</strong></div>
     <div style="margin-top:16px;padding:14px;border:1px solid var(--bdr);border-radius:12px;background:var(--bg0);">
       <div style="font-family:var(--fm);font-size:11px;color:var(--t3);letter-spacing:1.5px;margin-bottom:8px;">BULK PASTE VOTES:</div>
-      <textarea id="bulkVotesInput" rows="5" placeholder="Ravi ${tm.teamA}
-AM - ${tm.teamB}
-Ashutosh: ${tm.teamA}" style="width:100%;resize:vertical;background:var(--bg1);border:1px solid var(--bdr);border-radius:10px;color:var(--t1);font-family:var(--fm);font-size:12px;line-height:1.6;padding:10px 12px;outline:none;"></textarea>
+      <textarea id="bulkVotesInput" rows="5" placeholder="Ravi ${tm.teamA}\nAM - ${tm.teamB}\nAshutosh: ${tm.teamA}" style="width:100%;resize:vertical;background:var(--bg1);border:1px solid var(--bdr);border-radius:10px;color:var(--t1);font-family:var(--fm);font-size:12px;line-height:1.6;padding:10px 12px;outline:none;"></textarea>
       <div class="btn-row" style="margin-top:10px;">
         <button class="btn-save" style="font-size:11px;padding:8px 14px;" onclick="previewBulkVotes()">Preview</button>
         <button class="btn-green" style="font-size:11px;padding:8px 14px;" onclick="applyBulkVotes()">Apply Votes</button>
@@ -965,148 +805,87 @@ Ashutosh: ${tm.teamA}" style="width:100%;resize:vertical;background:var(--bg1);b
     </div>
     <div style="font-family:var(--fm);font-size:11px;color:var(--t3);letter-spacing:1.5px;margin:14px 0 8px;">TAP TO RECORD EACH VOTE:</div>
     <div style="display:flex;flex-direction:column;gap:6px;">${voteRows}</div>
-    ${allVotedMsg}
-    ${resultSection}
-    <div style="margin-top:20px;">
-      <button class="btn-danger" style="font-size:11px;padding:8px 16px;" onclick="cancelTodayMatch()">✕ Cancel Today's Match</button>
-    </div>`;
+    ${allVotedMsg}${resultSection}
+    <div style="margin-top:20px;"><button class="btn-danger" style="font-size:11px;padding:8px 16px;" onclick="cancelTodayMatch()">✕ Cancel Today's Match</button></div>`;
 }
 
 // ══════════════════════════════════════════════════════════
-//  QUICK VOTE
+//  VOTE PARSING & QUICK VOTE
 // ══════════════════════════════════════════════════════════
-function cleanVoteText(text) {
-  return String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
+function cleanVoteText(text) { return String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
 function teamVoteAliases(team) {
   const aliases = [team];
-  Object.entries(TEAM_ABBR).forEach(([full, short]) => {
-    if (short === team) aliases.push(full);
-  });
+  Object.entries(TEAM_ABBR).forEach(([full, short]) => { if (short === team) aliases.push(full); });
+  teamAliases(team).forEach(a => aliases.push(a));
   return [...new Set(aliases.map(cleanVoteText).filter(Boolean))];
 }
-
 function playerVoteAliases(player) {
   const parts = player.name.split(/\s+/).filter(Boolean);
-  return [...new Set([
-    player.name,
-    player.ini,
-    parts[0],
-    parts.map(part => part[0]).join('')
-  ].map(cleanVoteText).filter(Boolean))];
+  return [...new Set([player.name, player.ini, parts[0], parts.map(part => part[0]).join('')].map(cleanVoteText).filter(Boolean))];
 }
-
 function lineHasAlias(line, alias) {
   if (!alias) return false;
   return new RegExp(`(^|\\s)${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`, 'i').test(line);
 }
-
 function parseBulkVotes(raw) {
   if (!todayMatch) return { applied: {}, errors: ['No active match.'] };
-
-  const teamAliases = {
-    [todayMatch.teamA]: teamVoteAliases(todayMatch.teamA),
-    [todayMatch.teamB]: teamVoteAliases(todayMatch.teamB)
-  };
-  const applied = {};
-  const errors = [];
-
+  const teamAliasMap = { [todayMatch.teamA]: teamVoteAliases(todayMatch.teamA), [todayMatch.teamB]: teamVoteAliases(todayMatch.teamB) };
+  const applied = {}, errors = [];
   String(raw || '').split(/\r?\n/).forEach((line, index) => {
     const original = line.trim();
     if (!original) return;
-
     const clean = cleanVoteText(original);
-    const players = PLAYERS.filter(player =>
-      playerVoteAliases(player).some(alias => lineHasAlias(clean, alias))
-    );
-    const teams = [todayMatch.teamA, todayMatch.teamB].filter(team =>
-      teamAliases[team].some(alias => lineHasAlias(clean, alias))
-    );
-
-    if (players.length !== 1 || teams.length !== 1) {
-      errors.push(`Line ${index + 1}: "${original}"`);
-      return;
-    }
-
+    const players = PLAYERS.filter(p => playerVoteAliases(p).some(alias => lineHasAlias(clean, alias)));
+    const teams = [todayMatch.teamA, todayMatch.teamB].filter(team => teamAliasMap[team].some(alias => lineHasAlias(clean, alias)));
+    if (players.length !== 1 || teams.length !== 1) { errors.push(`L${index + 1}: "${original}"`); return; }
     applied[players[0].name] = teams[0];
   });
-
   return { applied, errors };
 }
-
 function previewBulkVotes() {
   const box = document.getElementById('bulkVotesInput');
   const out = document.getElementById('bulkVotesStatus');
   if (!box || !out) return;
-
   const parsed = parseBulkVotes(box.value);
-  const items = Object.entries(parsed.applied)
-    .map(([name, team]) => `${name.split(' ')[0]} = ${team}`)
-    .join('<br>');
-  const missed = parsed.errors.length
-    ? `<br><span style="color:var(--gold)">Check: ${parsed.errors.join('; ')}</span>`
-    : '';
-
+  const items = Object.entries(parsed.applied).map(([name, team]) => `${name.split(' ')[0]} = ${team}`).join('<br>');
+  const missed = parsed.errors.length ? `<br><span style="color:var(--gold)">Skipped: ${parsed.errors.join('; ')}</span>` : '';
   out.innerHTML = items
-    ? `<span style="color:var(--green)">Ready to apply ${Object.keys(parsed.applied).length} vote(s):</span><br>${items}${missed}`
-    : `<span style="color:var(--gold)">No votes recognized. Use lines like "Ravi ${todayMatch.teamA}" or "AM ${todayMatch.teamB}".</span>${missed}`;
+    ? `<span style="color:var(--green)">Will apply ${Object.keys(parsed.applied).length} vote(s):</span><br>${items}${missed}`
+    : `<span style="color:var(--gold)">No votes recognized. Lines like "Ravi ${todayMatch.teamA}" or "AM ${todayMatch.teamB}".</span>${missed}`;
 }
-
 async function applyBulkVotes() {
   if (!todayMatch || todayMatch.status === 'settled') return;
-
   const box = document.getElementById('bulkVotesInput');
-  const out = document.getElementById('bulkVotesStatus');
-  if (!box || !out) return;
-
+  if (!box) return;
   const parsed = parseBulkVotes(box.value);
   const entries = Object.entries(parsed.applied);
-  if (!entries.length) {
-    previewBulkVotes();
-    return;
-  }
-
+  if (!entries.length) { previewBulkVotes(); return; }
   if (!todayMatch.votes) todayMatch.votes = {};
-  entries.forEach(([name, team]) => {
-    todayMatch.votes[name] = team;
-  });
-
+  entries.forEach(([name, team]) => { todayMatch.votes[name] = team; });
   const vc = Object.values(todayMatch.votes).filter(v => v).length;
   if (vc >= PLAYERS.length && todayMatch.status === 'voting') {
     todayMatch.status = 'revealed';
     todayMatch.revealed = true;
-    dlog('All ' + PLAYERS.length + ' votes in via bulk paste -> auto-revealed', 'ok');
   }
-
   await pushData();
-  renderAll();
-  renderToday();
-
+  renderAll(); renderToday();
   if (vc >= PLAYERS.length) setTimeout(() => autoFetchResult(true), 1000);
   toast(`Applied ${entries.length} vote${entries.length !== 1 ? 's' : ''}`);
 }
-
 async function qVote(name, team) {
   if (!todayMatch || todayMatch.status === 'settled') return;
   if (!todayMatch.votes) todayMatch.votes = {};
   todayMatch.votes[name] = team;
-
-  // All voted → auto-reveal
   const vc = Object.values(todayMatch.votes).filter(v => v).length;
   if (vc >= PLAYERS.length && todayMatch.status === 'voting') {
-    todayMatch.status   = 'revealed';
+    todayMatch.status = 'revealed';
     todayMatch.revealed = true;
-    dlog('All ' + PLAYERS.length + ' voted → auto-revealed', 'ok');
     toast('All votes in — revealed! 👁');
     await pushData();
-    renderAll();
-    renderToday();
-    // Trigger auto result check immediately after reveal
+    renderAll(); renderToday();
     setTimeout(() => autoFetchResult(true), 1000);
     return;
   }
-
   await pushData();
   renderToday();
 }
@@ -1114,21 +893,13 @@ async function qVote(name, team) {
 // ══════════════════════════════════════════════════════════
 //  TODAY MATCH ACTIONS
 // ══════════════════════════════════════════════════════════
-
 const TEAM_ABBR = {
-  'Mumbai Indians':           'MI',
-  'Chennai Super Kings':      'CSK',
-  'Royal Challengers Bengaluru': 'RCB',
-  'Royal Challengers Bangalore': 'RCB',
-  'Kolkata Knight Riders':    'KKR',
-  'Delhi Capitals':           'DC',
-  'Rajasthan Royals':         'RR',
-  'Punjab Kings':             'PBKS',
-  'Sunrisers Hyderabad':      'SRH',
-  'Lucknow Super Giants':     'LSG',
-  'Gujarat Titans':           'GT'
+  'Mumbai Indians':'MI','Chennai Super Kings':'CSK',
+  'Royal Challengers Bengaluru':'RCB','Royal Challengers Bangalore':'RCB',
+  'Kolkata Knight Riders':'KKR','Delhi Capitals':'DC','Rajasthan Royals':'RR',
+  'Punjab Kings':'PBKS','Sunrisers Hyderabad':'SRH','Lucknow Super Giants':'LSG',
+  'Gujarat Titans':'GT'
 };
-
 function scheduleMatchToTodayMatch(match, slot) {
   const parts = (match.teams || '').split(' vs ');
   const fullA = (parts[0] || '').trim();
@@ -1136,27 +907,15 @@ function scheduleMatchToTodayMatch(match, slot) {
   const teamA = (TEAM_ABBR[fullA] || fullA).toUpperCase();
   const teamB = (TEAM_ABBR[fullB] || fullB).toUpperCase();
   return {
-    date: match.date,
-    dateKey: match.dateKey || istParts().key,
-    slot: slot.id,
-    slotLabel: slot.label,
-    teams: teamA + ' vs ' + teamB,
-    teamA,
-    teamB,
-    votes: {},
-    revealed: false,
-    winner: null,
-    status: 'voting',
-    autoOpened: true
+    date: match.date, dateKey: match.dateKey || istParts().key,
+    slot: slot.id, slotLabel: slot.label,
+    teams: teamA + ' vs ' + teamB, teamA, teamB,
+    votes: {}, revealed: false, winner: null, status: 'voting', autoOpened: true
   };
 }
-
 function todayScheduleMatches() {
   const now = istParts();
-  const today = liveSchedule.filter(match =>
-    (match.dateKey && match.dateKey === now.key) || (!match.dateKey && match.date === now.display)
-  );
-
+  const today = liveSchedule.filter(m => (m.dateKey && m.dateKey === now.key) || (!m.dateKey && m.date === now.display));
   return today.sort((a, b) => {
     if (a.timeMinutes != null && b.timeMinutes != null) return a.timeMinutes - b.timeMinutes;
     if (a.timeMinutes != null) return -1;
@@ -1164,33 +923,26 @@ function todayScheduleMatches() {
     return 0;
   });
 }
-
 function matchForSlot(slot) {
   const matchesToday = todayScheduleMatches();
   const index = AUTO_SLOTS.findIndex(item => item.id === slot.id);
   return matchesToday[index] || null;
 }
-
 function recordedScheduleMatch(match) {
   if (!match) return false;
   const tm = scheduleMatchToTodayMatch(match, { id:'', label:'' });
   return matches.some(item => item.date === tm.date && item.teams === tm.teams);
 }
-
 async function openAutoMatch(slot, match) {
   todayMatch = scheduleMatchToTodayMatch(match, slot);
   autoResultMsg = '';
   await pushData();
-  renderAll();
-  renderToday();
-  dlog(`Auto-opened voting for ${todayMatch.teams} (${slot.label})`, 'ok');
+  renderAll(); renderToday();
   await fetchVotesForCurrentMatch(true);
 }
-
 function votesComplete() {
-  return !!todayMatch?.votes && PLAYERS.every(player => todayMatch.votes[player.name]);
+  return !!todayMatch?.votes && PLAYERS.every(p => todayMatch.votes[p.name]);
 }
-
 function votesPayloadToText(data) {
   if (typeof data === 'string') return data;
   if (typeof data?.text === 'string') return data.text;
@@ -1203,19 +955,15 @@ function votesPayloadToText(data) {
   }
   return '';
 }
-
 async function fetchVotesForCurrentMatch(force = false) {
   if (!todayMatch || todayMatch.status !== 'voting' || autoVoteBusy || votesComplete()) return false;
   const statusEl = document.getElementById('bulkVotesStatus');
-
   const key = `${todayMatch.dateKey || istParts().key}|${todayMatch.slot || ''}|${todayMatch.teams}`;
   const now = Date.now();
   if (!force && lastAutoVoteCheck[key] && now - lastAutoVoteCheck[key] < AUTO_VOTE_POLL_MS) return false;
-
   autoVoteBusy = true;
   lastAutoVoteCheck[key] = now;
   if (statusEl) statusEl.innerHTML = '<span style="color:var(--blue)">Fetching votes from Google Sheet...</span>';
-
   try {
     const params = new URLSearchParams({
       action: 'getVotes',
@@ -1227,61 +975,34 @@ async function fetchVotesForCurrentMatch(force = false) {
     if (!res.ok) throw new Error('Votes HTTP ' + res.status);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-
     const parsed = parseBulkVotes(votesPayloadToText(data));
     const entries = Object.entries(parsed.applied);
     if (!entries.length) {
-      dlog(`No sheet votes found yet for ${todayMatch.teams}`, 'warn');
-      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Connected, but no usable votes found. Check Name/Vote headers and team abbreviations.</span>';
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--gold)">Connected, but no usable votes found.</span>';
       return false;
     }
-
     if (!todayMatch.votes) todayMatch.votes = {};
-    entries.forEach(([name, team]) => {
-      todayMatch.votes[name] = team;
-    });
-
+    entries.forEach(([name, team]) => { todayMatch.votes[name] = team; });
     const complete = votesComplete();
-    if (complete) {
-      todayMatch.status = 'revealed';
-      todayMatch.revealed = true;
-      dlog(`All votes fetched for ${todayMatch.teams}; revealed`, 'ok');
-      if (statusEl) statusEl.innerHTML = `<span style="color:var(--green)">Fetched all ${PLAYERS.length} votes. Revealing now.</span>`;
-    } else {
-      const count = Object.values(todayMatch.votes).filter(Boolean).length;
-      dlog(`Fetched ${count}/${PLAYERS.length} votes for ${todayMatch.teams}; will retry`, 'info');
-      if (statusEl) statusEl.innerHTML = `<span style="color:var(--blue)">Fetched ${count}/${PLAYERS.length} votes. Will retry every 30 minutes.</span>`;
-    }
-
+    if (complete) { todayMatch.status = 'revealed'; todayMatch.revealed = true; }
     await pushData();
-    renderAll();
-    renderToday();
+    renderAll(); renderToday();
     if (complete) setTimeout(() => autoFetchResult(true), 1000);
     return complete;
   } catch(e) {
-    dlog('Auto vote fetch: ' + e.message, 'err');
     if (statusEl) statusEl.innerHTML = `<span style="color:#ff7777">Sheet fetch failed: ${e.message}</span>`;
     return false;
-  } finally {
-    autoVoteBusy = false;
-  }
+  } finally { autoVoteBusy = false; }
 }
-
 async function runMatchAutomation() {
-  if (!remoteDataLoaded) {
-    dlog('Automation waiting for remote data sync before saving.', 'info');
-    return;
-  }
-
+  if (!remoteDataLoaded) return;
   const dueSlots = activeAutoSlots();
   if (!dueSlots.length || !liveSchedule.length) return;
-
   if (todayMatch && todayMatch.status !== 'settled') {
     if (todayMatch.status === 'voting') await fetchVotesForCurrentMatch();
     else if (todayMatch.status === 'revealed') await autoFetchResult();
     return;
   }
-
   for (const slot of dueSlots) {
     if (todayMatch?.status === 'settled' && todayMatch.slot === slot.id) continue;
     const match = matchForSlot(slot);
@@ -1291,13 +1012,10 @@ async function runMatchAutomation() {
     break;
   }
 }
-
 async function createTodayMatch() {
   const sel = document.getElementById('pickMatch');
   if (!sel || !sel.value) { toast('Pick a match first!', true); return; }
-
   let teamA, teamB, date, teams;
-
   if (sel.value === 'custom') {
     teamA = (document.getElementById('cmTeamA').value || '').trim().toUpperCase();
     teamB = (document.getElementById('cmTeamB').value || '').trim().toUpperCase();
@@ -1311,157 +1029,97 @@ async function createTodayMatch() {
     const fullB   = (parts[1] || fullA).trim();
     const shortA  = TEAM_ABBR[fullA] || fullA;
     const shortB  = TEAM_ABBR[fullB] || fullB;
-    teamA  = shortA;
-    teamB  = shortB;
-    date   = m.date;
-    teams  = shortA + ' vs ' + shortB;
+    teamA = shortA; teamB = shortB; date = m.date; teams = shortA + ' vs ' + shortB;
   }
-
   todayMatch = { date, teams, teamA, teamB, votes:{}, revealed:false, winner:null, status:'voting' };
   await pushData();
-  renderAll();
-  renderToday();
+  renderAll(); renderToday();
   toast('Voting OPEN! 🟢');
   setTimeout(() => fetchVotesForCurrentMatch(true), 500);
 }
-
 async function cancelTodayMatch() {
   if (!confirm('Cancel today\'s match? All votes will be lost.')) return;
   todayMatch = null;
   await pushData();
-  renderAll();
-  renderToday();
+  renderAll(); renderToday();
   toast('Cancelled');
 }
 
 // ══════════════════════════════════════════════════════════
-//  SCHEDULE (upcoming matches from CricAPI)
+//  SCHEDULE
 // ══════════════════════════════════════════════════════════
 async function fetchSchedule() {
   const el = document.getElementById('upcomingMatches');
-
-  // Helper to parse a single CricAPI match object into our format
   function parseMatch(m) {
-    const teams = Array.isArray(m.teams)
-      ? m.teams.join(' vs ')
-      : m.t1 && m.t2 ? `${m.t1} vs ${m.t2}` : (m.name || '—');
-
+    const teams = Array.isArray(m.teams) ? m.teams.join(' vs ') : m.t1 && m.t2 ? `${m.t1} vs ${m.t2}` : (m.name || '—');
     const rawDate = m.dateTimeGMT || m.date || null;
-    const date = rawDate
-      ? new Date(rawDate).toLocaleDateString('en-IN', {day:'numeric', month:'short'})
-      : '—';
-
-    const status = m.matchStarted
-      ? (m.matchEnded ? 'completed' : 'live')
-      : 'upcoming';
-
+    const date = rawDate ? new Date(rawDate).toLocaleDateString('en-IN', {day:'numeric', month:'short'}) : '—';
+    const status = m.matchStarted ? (m.matchEnded ? 'completed' : 'live') : 'upcoming';
     return {
-      date,
-      dateKey: rawDate ? istParts(new Date(rawDate)).key : '',
+      date, dateKey: rawDate ? istParts(new Date(rawDate)).key : '',
       timeMinutes: rawDate ? istParts(new Date(rawDate)).minutes : null,
-      teams,
-      venue:  m.venue || '',
-      status,
+      teams, venue: m.venue || '', status,
       winner: m.matchEnded ? (m.status || '') : '',
-      t1:     m.t1 || (Array.isArray(m.teams) ? m.teams[0] : ''),
-      t2:     m.t2 || (Array.isArray(m.teams) ? m.teams[1] : ''),
+      t1: m.t1 || (Array.isArray(m.teams) ? m.teams[0] : ''),
+      t2: m.t2 || (Array.isArray(m.teams) ? m.teams[1] : ''),
       apiName: m.name || ''
     };
   }
-
-  // Try cricScore first
   try {
-    dlog('Fetching IPL schedule from cricScore...', 'info');
     const res  = await fetch(`https://api.cricapi.com/v1/cricScore?apikey=${CRIC_API_KEY}`);
     const data = await res.json();
-    dlog('cricScore: status=' + data.status + ', items=' + (data.data?.length || 0), 'info');
-
     if (data.status === 'success' && Array.isArray(data.data)) {
-      const ipl = data.data.filter(m =>
-        m.name && /Indian Premier League|IPL/i.test(m.name)
-      );
+      const ipl = data.data.filter(m => m.name && /Indian Premier League|IPL/i.test(m.name));
       if (ipl.length) {
         liveSchedule = ipl.map(parseMatch);
-        dlog('✅ Loaded ' + liveSchedule.length + ' IPL matches from cricScore', 'ok');
         renderUpcoming();
         if (adminUnlocked) renderAdminToday();
         await runMatchAutomation();
         return;
       }
-      dlog('cricScore: no IPL matches in response', 'warn');
     }
-  } catch(e) { dlog('cricScore error: ' + e.message, 'err'); }
-
-  // Fallback: currentMatches
+  } catch(e) { dlog('cricScore: ' + e.message, 'err'); }
   try {
-    dlog('Trying currentMatches...', 'info');
     const res  = await fetch(`https://api.cricapi.com/v1/currentMatches?apikey=${CRIC_API_KEY}&offset=0`);
     const data = await res.json();
-    dlog('currentMatches: status=' + data.status + ', items=' + (data.data?.length || 0), 'info');
-
     if (data.status === 'success' && Array.isArray(data.data)) {
-      const ipl = data.data.filter(m =>
-        m.name && /Indian Premier League|IPL/i.test(m.name)
-      );
+      const ipl = data.data.filter(m => m.name && /Indian Premier League|IPL/i.test(m.name));
       if (ipl.length) {
         liveSchedule = ipl.map(parseMatch);
-        dlog('✅ Loaded ' + liveSchedule.length + ' IPL matches from currentMatches', 'ok');
         renderUpcoming();
         if (adminUnlocked) renderAdminToday();
         await runMatchAutomation();
         return;
       }
     }
-  } catch(e) { dlog('currentMatches error: ' + e.message, 'err'); }
-
-  // Both failed
-  dlog('All CricAPI schedule attempts failed', 'err');
-  if (el) el.innerHTML = `
-    <div style="text-align:center;padding:24px;font-family:var(--fm);font-size:12px;color:var(--t3);background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;">
-      <div style="color:var(--gold);font-size:14px;margin-bottom:8px;">⚠ Could not load IPL schedule</div>
-      CricAPI may be down or the API key quota is exhausted.<br>
-      Use <strong style="color:var(--blue)">Custom match</strong> in Admin panel to set today's match manually.<br><br>
-      <button onclick="fetchSchedule()" style="background:rgba(0,212,255,0.08);border:1px solid var(--bdr2);color:var(--blue);border-radius:8px;padding:8px 18px;font-family:var(--fm);font-size:12px;cursor:pointer;">↻ Try Again</button>
-    </div>`;
+  } catch(e) { dlog('currentMatches: ' + e.message, 'err'); }
+  if (el) el.innerHTML = `<div style="text-align:center;padding:24px;font-family:var(--fm);font-size:12px;color:var(--t3);background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;">
+    <div style="color:var(--gold);font-size:14px;margin-bottom:8px;">⚠ Could not load IPL schedule</div>
+    Use <strong style="color:var(--blue)">Custom match</strong> in Admin panel.<br><br>
+    <button onclick="fetchSchedule()" style="background:rgba(0,212,255,0.08);border:1px solid var(--bdr2);color:var(--blue);border-radius:8px;padding:8px 18px;font-family:var(--fm);font-size:12px;cursor:pointer;">↻ Try Again</button>
+  </div>`;
 }
-
-// ══════════════════════════════════════════════════════════
-//  RENDER — UPCOMING
-// ══════════════════════════════════════════════════════════
 function renderUpcoming() {
   const el = document.getElementById('upcomingMatches');
-  if (!liveSchedule.length) {
-    el.innerHTML = '<div class="loading-box"><div class="spin">⚙</div><div>Loading IPL schedule...</div></div>';
-    return;
-  }
+  if (!liveSchedule.length) { el.innerHTML = '<div class="loading-box"><div class="spin">⚙</div><div>Loading IPL schedule...</div></div>'; return; }
   el.innerHTML = liveSchedule.map(m => {
-    const isLive      = m.status === 'live';
-    const isCompleted = m.status === 'completed';
-
-    const statusCls  = isLive
+    const isLive = m.status === 'live', isCompleted = m.status === 'completed';
+    const statusCls = isLive
       ? 'status-upcoming" style="background:rgba(57,255,20,0.12);color:var(--green);border-color:rgba(57,255,20,0.3);animation:blink 1.5s ease-in-out infinite'
       : isCompleted
         ? 'status-upcoming" style="background:rgba(255,107,0,0.1);color:var(--orange);border-color:rgba(255,107,0,0.25)'
         : 'status-upcoming';
-
     const lbl = isLive ? '🔴 LIVE' : isCompleted ? '✅ DONE' : '🗓 UPCOMING';
-
-    const winBit = (isCompleted && m.winner)
-      ? `<span style="display:inline-block;background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);color:var(--green);font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:20px;margin-left:8px;">🏆 ${m.winner}</span>`
-      : '';
-
+    const winBit = (isCompleted && m.winner) ? `<span style="display:inline-block;background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);color:var(--green);font-family:var(--fm);font-size:10px;padding:2px 8px;border-radius:20px;margin-left:8px;">🏆 ${m.winner}</span>` : '';
     return `<div class="match-tile">
-      <div>
-        <div class="match-tile-teams">${m.teams}${winBit}</div>
-        <div class="match-tile-meta"><span>${m.date}</span>${m.venue}</div>
-      </div>
+      <div><div class="match-tile-teams">${m.teams}${winBit}</div><div class="match-tile-meta"><span>${m.date}</span>${m.venue}</div></div>
       <span class="match-status ${statusCls}">${lbl}</span>
     </div>`;
   }).join('');
 }
 
 // ══════════════════════════════════════════════════════════
-//  SCORES / STREAKS
+//  SCORES (with adjustments)
 // ══════════════════════════════════════════════════════════
 function calcScores() {
   const s = {};
@@ -1470,10 +1128,13 @@ function calcScores() {
     const c = m.correct || [];
     if (c.length) c.forEach(n => { if (s[n] !== undefined) s[n] += PTS / c.length; });
   });
+  // Apply adjustments (Double Dip bonuses, penalties, side bets, etc.)
+  adjustments.forEach(a => {
+    if (s[a.name] !== undefined) s[a.name] += Number(a.points) || 0;
+  });
   Object.keys(s).forEach(k => s[k] = Math.round(s[k]));
   return s;
 }
-
 function calcStreaks() {
   const st = {};
   PLAYERS.forEach(p => st[p.name] = 0);
@@ -1488,37 +1149,33 @@ function calcStreaks() {
   });
   return st;
 }
-
 function calcCorrects() {
   const cc = {};
   PLAYERS.forEach(p => cc[p.name] = 0);
   matches.forEach(m => (m.correct || []).forEach(n => { if (cc[n] !== undefined) cc[n]++; }));
   return cc;
 }
+function adjustmentTotalFor(name) {
+  return adjustments.filter(a => a.name === name).reduce((sum, a) => sum + (Number(a.points) || 0), 0);
+}
 
 // ══════════════════════════════════════════════════════════
-//  RENDER — ALL
+//  RENDER ALL
 // ══════════════════════════════════════════════════════════
 function renderAll() { renderTicker(); renderStats(); renderLB(); renderLog(); }
-
 function renderTicker() {
   const sc = calcScores();
   const sorted = PLAYERS.map(p => ({...p, s: sc[p.name]})).sort((a,b) => b.s - a.s);
-  const items  = sorted.map(p =>
-    `<span class="strip-item"><strong>${p.ini}</strong><span class="dot">•</span>${p.s} pts</span>`
-  ).join('');
+  const items  = sorted.map(p => `<span class="strip-item"><strong>${p.ini}</strong><span class="dot">•</span>${p.s} pts</span>`).join('');
   document.getElementById('stripInner').innerHTML = items + items;
 }
-
 function renderStats() {
-  const sc   = calcScores();
+  const sc = calcScores();
   const vals = Object.values(sc);
   const total = vals.reduce((a,b) => a+b, 0);
-  const ls    = Math.max(...vals);
+  const ls = Math.max(...vals);
   const leader = PLAYERS.find(p => sc[p.name] === ls);
-  const avgC  = matches.length
-    ? (matches.reduce((a,m) => a + (m.correct||[]).length, 0) / matches.length).toFixed(1)
-    : '—';
+  const avgC = matches.length ? (matches.reduce((a,m) => a + (m.correct||[]).length, 0) / matches.length).toFixed(1) : '—';
   document.getElementById('statsBar').innerHTML = `
     <div class="stat-card"><div class="stat-icon">🏏</div><div class="stat-val">${matches.length}</div><div class="stat-lbl">MATCHES</div></div>
     <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-val">${total}</div><div class="stat-lbl">TOTAL PTS</div></div>
@@ -1526,19 +1183,13 @@ function renderStats() {
     <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-val">${avgC}</div><div class="stat-lbl">AVG CORRECT</div></div>`;
   document.getElementById('matchCountBadge').textContent = matches.length;
 }
-
 function renderLB() {
   const sc = calcScores(), st = calcStreaks(), cc = calcCorrects();
-  const sorted = PLAYERS.map(p => ({...p, s: sc[p.name], streak: st[p.name], correct: cc[p.name]}))
-                        .sort((a,b) => b.s - a.s);
+  const sorted = PLAYERS.map(p => ({...p, s: sc[p.name], streak: st[p.name], correct: cc[p.name], adj: adjustmentTotalFor(p.name)})).sort((a,b) => b.s - a.s);
   const lb = document.getElementById('leaderboard');
   lb.innerHTML = '';
-  const rk = [];
-  let tr = 1;
-  sorted.forEach((p,i) => {
-    if (i > 0 && p.s < sorted[i-1].s) tr = i + 1;
-    rk.push(tr);
-  });
+  const rk = []; let tr = 1;
+  sorted.forEach((p,i) => { if (i > 0 && p.s < sorted[i-1].s) tr = i + 1; rk.push(tr); });
   sorted.forEach((p,i) => {
     const r  = rk[i];
     const rc = r===1 ? 'rank-1' : r===2 ? 'rank-2' : r===3 ? 'rank-3' : 'rank-other';
@@ -1546,8 +1197,15 @@ function renderLB() {
     let sc2 = 'streak-cold', st2 = `${p.correct}/${matches.length} correct`;
     if (p.streak >= 3)      { sc2 = 'streak-hot'; st2 = `🔥 ${p.streak}-match streak`; }
     else if (p.streak >= 1) { sc2 = 'streak-ok';  st2 = `✓ ${p.streak}-match streak`; }
+    // Rank 1 decorations
+    const crown = r === 1 ? `<div class="crown-float">👑</div><div class="sparkle s1">✨</div><div class="sparkle s2">⭐</div><div class="sparkle s3">✨</div>` : '';
+    // Adjustment badge
+    const adjBadge = p.adj !== 0
+      ? `<span class="adj-badge${p.adj < 0 ? ' neg' : ''}">${p.adj > 0 ? '+' : ''}${p.adj} bonus</span>`
+      : '';
     lb.innerHTML += `
       <div class="player-card ${rc}">
+        ${crown}
         <div class="rank-num">${ri}</div>
         <div class="avatar" style="background:${p.bg};--av-c1:${p.c1};--av-c2:${p.c2};">
           <span style="color:${p.c1};font-family:'Bebas Neue',sans-serif;font-size:17px;position:relative;z-index:1;">${p.ini}</span>
@@ -1556,6 +1214,7 @@ function renderLB() {
           <div class="player-name">${p.name}</div>
           <div class="player-meta">
             <span class="streak-badge ${sc2}">${st2}</span>
+            ${adjBadge}
             <span class="correct-count">${p.correct}/${matches.length} correct</span>
           </div>
         </div>
@@ -1566,45 +1225,40 @@ function renderLB() {
       </div>`;
   });
 }
-
 function renderLog() {
   const c = document.getElementById('matchLog');
   if (!matches.length) { c.innerHTML = '<div class="empty-log">No matches recorded yet.</div>'; return; }
   const t = {};
   PLAYERS.forEach(p => t[p.name] = 0);
-  const h = PLAYERS.map(p =>
-    `<th title="${p.name}" style="color:${p.c1}">${p.ini}</th>`
-  ).join('');
+  const h = PLAYERS.map(p => `<th title="${p.name}" style="color:${p.c1}">${p.ini}</th>`).join('');
   const rows = matches.map((m, idx) => {
     const cr = m.correct || [], pe = cr.length ? PTS / cr.length : 0;
     const cells = PLAYERS.map(p => {
       const ok = cr.includes(p.name);
       if (ok) t[p.name] += pe;
-      return ok
-        ? `<td><span class="c-yes">✓</span></td>`
-        : `<td><span class="c-no">·</span></td>`;
+      return ok ? `<td><span class="c-yes">✓</span></td>` : `<td><span class="c-no">·</span></td>`;
     }).join('');
-    const pc  = cr.length ? `<td><span class="pts-val">${Math.round(pe)}</span></td>` : `<td><span class="pts-nil">—</span></td>`;
-    const del = adminUnlocked
-      ? `<td><button class="del-btn" onclick="delMatch(${idx})">✕</button></td>`
-      : `<td></td>`;
+    const pc = cr.length ? `<td><span class="pts-val">${Math.round(pe)}</span></td>` : `<td><span class="pts-nil">—</span></td>`;
+    const del = adminUnlocked ? `<td><button class="del-btn" onclick="delMatch(${idx})">✕</button></td>` : `<td></td>`;
     return `<tr>
       <td class="td-m">
         <span class="m-date">${m.date||''}</span>
         <span class="m-teams">${m.teams||''}</span>
         <span class="m-winner">▶ ${m.winner||''}</span>
-      </td>
-      ${cells}${pc}${del}
+      </td>${cells}${pc}${del}
     </tr>`;
   }).join('');
-  const tc = PLAYERS.map(p =>
-    `<td class="total-pts-cell" style="color:${p.c1}">${Math.round(t[p.name])}</td>`
-  ).join('');
+  // Add adjustments as separate rows in totals area
+  const tc = PLAYERS.map(p => {
+    const adj = adjustmentTotalFor(p.name);
+    const total = Math.round(t[p.name]) + adj;
+    return `<td class="total-pts-cell" style="color:${p.c1}">${total}</td>`;
+  }).join('');
   c.innerHTML = `<table>
     <thead><tr><th class="th-m">MATCH</th>${h}<th class="th-pts">PTS</th><th></th></tr></thead>
     <tbody>${rows}
       <tr class="totals-row">
-        <td class="td-m totals-lbl">TOTAL</td>${tc}<td></td><td></td>
+        <td class="td-m totals-lbl">TOTAL (incl. bonus)</td>${tc}<td></td><td></td>
       </tr>
     </tbody>
   </table>`;
@@ -1634,16 +1288,13 @@ function tryUnlock() {
     document.getElementById('lockLabel').textContent = 'ADMIN (OPEN)';
     document.getElementById('adminPanel').classList.add('open');
     buildPredGrid();
+    buildBonusGrid();
+    renderAdjLog();
     document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
     updateScriptDisplay();
-    renderLog();
-    renderToday();
-    renderAdminToday();
+    renderLog(); renderToday(); renderAdminToday();
     toast('Admin unlocked 🔓');
-    // Immediately check result if match is already revealed
-    if (todayMatch?.status === 'revealed') {
-      setTimeout(() => autoFetchResult(true), 1000);
-    }
+    if (todayMatch?.status === 'revealed') setTimeout(() => autoFetchResult(true), 1000);
   } else {
     document.getElementById('pwErr').textContent = 'Wrong password.';
     document.getElementById('pwInput').value = '';
@@ -1654,8 +1305,7 @@ function lockAdmin() {
   document.getElementById('adminPanel').classList.remove('open');
   document.getElementById('lockIcon').textContent  = '🔒';
   document.getElementById('lockLabel').textContent = 'ADMIN PANEL';
-  renderLog();
-  renderToday();
+  renderLog(); renderToday();
   toast('Locked 🔒');
 }
 function switchTab(id, btn) {
@@ -1671,15 +1321,14 @@ function switchTab(id, btn) {
 function buildPredGrid() {
   predState = {};
   PLAYERS.forEach(p => predState[p.name] = null);
-  document.getElementById('predGrid').innerHTML = PLAYERS.map(p =>
-    `<div class="pred-item">
+  document.getElementById('predGrid').innerHTML = PLAYERS.map(p => `
+    <div class="pred-item">
       <div class="pred-name" style="color:${p.c1}">${p.name.split(' ')[0]}</div>
       <div class="pred-btns">
         <button id="pc-${p.ini}" onclick="setPred('${p.name}',true,'${p.ini}')">✓</button>
         <button id="pw-${p.ini}" onclick="setPred('${p.name}',false,'${p.ini}')">✗</button>
       </div>
-    </div>`
-  ).join('');
+    </div>`).join('');
 }
 function setPred(n, ok, ini) {
   predState[n] = ok;
@@ -1719,12 +1368,100 @@ async function delMatch(idx) {
   else { matches = bk; renderAll(); toast('Failed', true); }
 }
 async function clearAll() {
-  if (!confirm('DELETE ALL matches and today\'s match? This cannot be undone.')) return;
-  matches    = [];
-  todayMatch = null;
+  if (!confirm('DELETE ALL matches, today\'s match AND adjustments?')) return;
+  matches = []; todayMatch = null; adjustments = [];
   const ok = await pushData();
-  if (ok) { renderAll(); renderToday(); toast('All data cleared'); }
+  if (ok) { renderAll(); renderToday(); renderAdjLog(); toast('All data cleared'); }
   else toast('Failed', true);
+}
+
+// ══════════════════════════════════════════════════════════
+//  ADMIN — BONUS / ADJUSTMENTS  (NEW)
+// ══════════════════════════════════════════════════════════
+function buildBonusGrid() {
+  const grid = document.getElementById('bonusGrid');
+  if (!grid) return;
+  grid.innerHTML = PLAYERS.map(p => `
+    <div class="adj-row">
+      <div class="adj-ini" style="background:${p.bg};color:${p.c1};">${p.ini}</div>
+      <div class="adj-name" style="color:${p.c1}">${p.name.split(' ')[0]}</div>
+      <input type="number" class="adj-input" id="adjAmt-${p.ini}" placeholder="±pts" step="1">
+      <div class="adj-quick">
+        <button class="pos" onclick="quickBonus('${p.name}',60)">+60</button>
+        <button class="pos" onclick="quickBonus('${p.name}',30)">+30</button>
+        <button class="pos" onclick="quickBonus('${p.name}',10)">+10</button>
+        <button class="neg" onclick="quickBonus('${p.name}',-20)">−20</button>
+        <button class="neg" onclick="quickBonus('${p.name}',-50)">−50</button>
+        <button class="apply" onclick="applyCustomBonus('${p.name}','${p.ini}')">Apply ↑</button>
+      </div>
+    </div>`).join('');
+}
+
+async function quickBonus(name, points) {
+  const reason = (document.getElementById('bonusReason')?.value || '').trim() || 'Bonus points';
+  await addAdjustment(name, points, reason);
+}
+
+async function applyCustomBonus(name, ini) {
+  const input = document.getElementById('adjAmt-' + ini);
+  if (!input) return;
+  const points = Number(input.value);
+  if (!points) { toast('Enter a non-zero amount', true); return; }
+  const reason = (document.getElementById('bonusReason')?.value || '').trim() || 'Bonus points';
+  await addAdjustment(name, points, reason);
+  input.value = '';
+}
+
+async function addAdjustment(name, points, reason) {
+  const adj = {
+    name, points: Number(points),
+    reason: reason || 'Bonus points',
+    date: new Date().toLocaleDateString('en-IN', {day:'numeric', month:'short'}),
+    ts: Date.now()
+  };
+  await pullData();
+  adjustments.push(adj);
+  const ok = await pushData();
+  if (ok) {
+    renderAll();
+    renderAdjLog();
+    toast(`${name.split(' ')[0]}: ${points > 0 ? '+' : ''}${points} pts ✓`);
+  } else {
+    adjustments.pop();
+    toast('Failed to save', true);
+  }
+}
+
+async function deleteAdjustment(ts) {
+  if (!confirm('Delete this adjustment?')) return;
+  const backup = [...adjustments];
+  adjustments = adjustments.filter(a => a.ts !== ts);
+  const ok = await pushData();
+  if (ok) { renderAll(); renderAdjLog(); toast('Adjustment removed'); }
+  else { adjustments = backup; toast('Failed', true); }
+}
+
+function renderAdjLog() {
+  const el = document.getElementById('adjLog');
+  if (!el) return;
+  if (!adjustments.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;font-family:var(--fm);font-size:11px;color:var(--t3);">No adjustments yet.</div>';
+    return;
+  }
+  const sorted = [...adjustments].sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  el.innerHTML = sorted.map(a => {
+    const p = PLAYERS.find(pl => pl.name === a.name);
+    const cls = a.points >= 0 ? 'pos' : 'neg';
+    const sign = a.points >= 0 ? '+' : '';
+    return `<div class="adj-log-row">
+      <div class="adj-ini" style="background:${p?.bg || 'var(--bg2)'};color:${p?.c1 || 'var(--t1)'};width:26px;height:26px;font-size:10px;">${p?.ini || '?'}</div>
+      <div class="alr-name" style="color:${p?.c1 || 'var(--t1)'}">${(a.name || '').split(' ')[0]}</div>
+      <div class="alr-pts ${cls}">${sign}${a.points}</div>
+      <div class="alr-reason">${a.reason || '—'}</div>
+      <div class="alr-date">${a.date || ''}</div>
+      ${adminUnlocked ? `<button class="del-btn" onclick="deleteAdjustment(${a.ts})">✕</button>` : ''}
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1740,7 +1477,8 @@ async function testConnection() {
     if (d.error) throw new Error(d.error);
     const n  = (d.matches || []).length;
     const ht = d.hasOwnProperty('todayMatch');
-    if (el) el.innerHTML = `<span style="color:var(--green)">✅ Connected! ${n} matches. todayMatch field: ${ht ? 'YES ✓' : '❌ Update Apps Script!'}</span>`;
+    const ha = d.hasOwnProperty('adjustments');
+    if (el) el.innerHTML = `<span style="color:var(--green)">✅ Connected! ${n} matches. todayMatch: ${ht ? '✓' : '❌'} · adjustments: ${ha ? '✓' : '⚠ Add to Apps Script'}</span>`;
     toast('Connected ✅');
     await pullData();
   } catch(e) {
@@ -1765,10 +1503,11 @@ function updateScriptDisplay() {
 }
 async function seedDatabase() {
   if (!confirm('Replace all data with 6 seed matches?')) return;
-  matches    = JSON.parse(JSON.stringify(SEED));
+  matches = JSON.parse(JSON.stringify(SEED));
   todayMatch = null;
+  adjustments = [];
   const ok = await pushData();
-  if (ok) { renderAll(); renderToday(); toast('Database seeded! 🌱'); }
+  if (ok) { renderAll(); renderToday(); renderAdjLog(); toast('Database seeded! 🌱'); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1777,6 +1516,7 @@ async function seedDatabase() {
 const cached = cacheGet();
 matches    = cached?.matches?.length ? cached.matches : JSON.parse(JSON.stringify(SEED));
 todayMatch = cached?.todayMatch || null;
+adjustments = Array.isArray(cached?.adjustments) ? cached.adjustments : [];
 
 renderAll();
 renderUpcoming();
@@ -1789,12 +1529,12 @@ async function initApp() {
 }
 initApp();
 
-// Poll every 30s: refresh data, auto-open due matches, fetch votes, and auto-check results.
 setInterval(async () => {
   if (!adminUnlocked) await pullData();
   await runMatchAutomation();
   await autoFetchResult();
 }, 30000);
+
 </script>
 </body>
 </html>
